@@ -56,9 +56,9 @@ The production security blocker was resolved by upgrading to patched TanStack St
 ## Known limitations and required next actions
 
 1. The connected Supabase account currently contains only the unrelated inactive LoadGuard 3D project. It has not been modified. A new `ReversePath-VibeSprint` project is required.
-2. Confirm the target organization and zero-cost project creation, then configure the new project's URL, publishable and server keys privately using [the setup guide](VIBE_SPRINT_SETUP.md).
+2. The user approved the **Open AI** organization and **Mumbai** region, strictly $0. Organization lookup confirms the free plan. Connector cost/confirmation tools are unavailable and the available browser is signed out; the user must create the project through the dashboard. Configure its URL, publishable and server keys privately using [the setup guide](VIBE_SPRINT_SETUP.md).
 3. Apply the four migrations only after verifying the target is the dedicated empty project. Run remote RLS and the authenticated Golden Path with mock AI.
-4. Supply the RouterPlus replacement key privately, confirm a model through authenticated `/v1/models`, and validate real generation within the approved budget.
+4. The user reported saving the RouterPlus key, but the exact workspace `.env` check still reports an empty OPENAI_API_KEY and no alternate local env file was found. Save it in the correct file or identify the configured file path. Then confirm a model through authenticated `/v1/models` and validate real generation within the approved budget. No authenticated API request was sent without a key.
 5. Only after real local integration passes, configure production build/runtime variables, Supabase redirect URLs, deploy to the existing Vercel project and test with disposable users. Preserve or roll back to the verified demo deployment if required.
 6. Current browser persistence in `/demo` is not database persistence. Real registration, AI plans and remote persistence remain acceptance blockers.
 
