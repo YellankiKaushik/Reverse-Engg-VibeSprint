@@ -104,7 +104,9 @@ The smoke call is deliberately tiny, but it is real paid inference. The full liv
 
 Vercel is prepared through Nitro's `vercel` preset. `npm run build:vercel` generates `.vercel/output` with an SSR/server-function handler; `vercel.json` supplies the build command. The production server is not a static-only Vite site.
 
-After push/deployment approval, create or link a **new** Vercel project for the sprint repository, configure the environment names above privately for the intended deployment environment, and run a remote build/deployment. Set Node 24 (the tested local runtime). Add the resulting origin to Supabase's allowed redirect URLs and `PUBLIC_APP_URL`. Provider keys and server Supabase secret must remain runtime secrets. `VITE_*` public values must be available at build time. `.vercelignore` excludes `.env` from source upload.
+The dedicated Vercel project already exists: `reversepath-vibesprint`, ID `prj_McY3U5riuZN49HM72w9Bv7Ng0J1M`, team `kaushik-yellanki-project`, free Hobby plan. Reuse it; do not create another hosting project. The verified production origin is `https://reversepath-vibesprint.vercel.app`, with `/demo` as the prepared fallback.
+
+After real integration passes, configure the environment names above privately for production and run a remote build/deployment. Use Node 24 (the tested runtime). Set Supabase's Site URL and `PUBLIC_APP_URL` to `https://reversepath-vibesprint.vercel.app`; allow that origin and the local test origins as authentication redirects. Provider keys and server Supabase secret must remain runtime secrets. `VITE_*` public values must be available at build time. `.vercelignore` excludes `.env` from source upload. User authorization covers safe updates to this existing deployment; preserve the working demo until the real hosted Golden Path passes.
 
 Do not deploy the current unconfigured build as a working authenticated/live product. An offline-only preview can be published only if explicitly approved and labelled as such. A successful local Vercel build is not proof of a working public deployment.
 

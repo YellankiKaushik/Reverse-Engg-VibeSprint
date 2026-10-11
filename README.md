@@ -4,6 +4,14 @@ ReversePath is an AI-assisted goal, problem-solving, decision, and execution wor
 
 The authoritative architecture is in [docs/DEEP_TECHNICAL_ARCHITECTURE.md](docs/DEEP_TECHNICAL_ARCHITECTURE.md).
 
+## Vibe Sprint submission
+
+Public application: https://reversepath-vibesprint.vercel.app. Verified fallback: https://reversepath-vibesprint.vercel.app/demo.
+
+The hosted submission currently runs the prepared offline example, clearly labelled **no live AI**. Its task completion is saved in browser storage. Live email authentication, database persistence, and RouterPlus generation await the dedicated Supabase project and private credentials; they are not yet verified or enabled in production.
+
+See [setup](docs/VIBE_SPRINT_SETUP.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), and [final submission report](docs/VIBE_SPRINT_FINAL_REPORT.md) for configuration and actual test results. The sprint configuration uses RouterPlus through the existing `openai` adapter, with zero retries and mock mode until real integration passes.
+
 ## Stack
 
 - TypeScript, React 19, TanStack Start, TanStack Router, TanStack Query
@@ -31,7 +39,7 @@ AI_PROVIDER_MODE=mock
 
 ## Supabase Setup
 
-Create or choose a Supabase project, then apply the migrations:
+Use the dedicated **ReversePath-VibeSprint** Supabase project. Verify its reference before applying the migrations; never use the unrelated LoadGuard 3D database:
 
 ```sh
 supabase login
