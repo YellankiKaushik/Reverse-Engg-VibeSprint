@@ -8,7 +8,10 @@ Work directly in `C:\Users\YellankiKaushik\Desktop\KAUSHIK\ALL Projects\VibeSpri
 - Origin: `https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint.git`.
 - Clean extracted baseline: `c684966` (`chore: preserve clean ReversePath sprint baseline`).
 - No Git history existed when work began. `git ls-remote --heads origin` returned no branches.
-- No push or deployment has been authorized or performed. Before pushing, inspect the current index for secrets and request explicit approval, as required by the mission.
+- User approved pushing the two tested commits and deploying the demo on free hosting. Both approved commits were pushed; remote main then matched `d980460`. Credential scan: 144 tracked files, zero findings.
+- Production source commit: `3e6b399`. Vercel blocked the old TanStack Start package for CVE-2026-102989; this commit updates Start to 1.168.60, Router to 1.170.41, router-plugin to 1.168.42, and adjusts the root error prop to unknown. No security bypass was enabled.
+- Verified public submission: https://reversepath-vibesprint.vercel.app/demo (landing: https://reversepath-vibesprint.vercel.app).
+- Vercel project `reversepath-vibesprint`, ID `prj_McY3U5riuZN49HM72w9Bv7Ng0J1M`, team `kaushik-yellanki-project`, verified active free Hobby plan. Deployment `dpl_CwW6fKNJW6yEgf6rCrpc5dmJjAzH`; production Node 24 SSR, AI_PROVIDER_MODE=mock, no Supabase or live AI credentials supplied.
 - Do not modify the original Retraza-Kaaush remote, force-push, amend/rebase published commits, create a nested clone, or reset any existing Supabase project.
 
 ## User decisions
@@ -77,7 +80,8 @@ After implementation:
 - `npm run build:vercel`: pass; `.vercel/output/config.json` contains filesystem assets and fallback to `/__server`; generated `.vc-config.json` uses `nodejs24.x` with streaming.
 - Desktop/mobile screenshots inspected; no clipping or horizontal overflow in the prepared demo.
 - `npm run check:env`: correctly exits 1 because five required Supabase variables are missing. This is a real configuration blocker, not a passed live check.
-- `vercel whoami`: authenticated as the user's account; no Vercel project created or linked and nothing deployed.
+- Patched deployment checks: TypeScript pass, 38 tests passed / 6 live checks skipped, Vercel build pass, four local public/demo browser tests passed.
+- Hosted production checks: four Chromium tests passed against the canonical HTTPS origin, using fresh unauthenticated contexts: landing, auth guard, full prepared-demo completion with dependency unlocking, refresh persistence and reset, and mobile usability without overflow. A separate browser visit returned HTTP 200 with zero page errors; screenshot is in ignored `test-results/hosted-demo.png`.
 - Logs are ignored `*-check.log` files in the workspace, not committed credentials.
 
 ## Required private environment names (never values)
@@ -95,13 +99,13 @@ IMPORTANT: the shell inherits a non-RouterPlus `OPENAI_API_KEY`; environment var
 1. Dedicated Supabase project not yet created/configured. Existing migrations have static validation only, not remote SQL execution. No existing database was changed.
 2. RouterPlus private key and authenticated model ID not configured. Public docs/catalog confirm compatible wire format, but no real paid inference has been made.
 3. Full authenticated Golden Path, real RLS, persisted completion after refresh, and live planning/replanning require those configurations.
-4. Push and public deployment require explicit mission approval. No public application URL exists.
+4. Hosted prepared demo is working and ready to submit. Preserve it while live credentials remain unavailable.
 5. Backend action/node edits use multiple writes under the existing API; errors are now surfaced, but these writes are not transactional. Remote failure/concurrency behavior requires real DB tests before claiming production reliability.
 
 ## Exact next task for Claude Code or Codex
 
 Read `docs/VIBE_SPRINT_SETUP.md`, obtain the **new project's reference ID** and privately configured `.env`, confirm the target is ReversePath-VibeSprint, apply the four reviewed migrations only to that empty project, and run `npm run check:env`. Keep AI mock initially. Run live Supabase RLS tests and the authenticated Golden Path against mock AI first. Fix failures from actual output.
 
-Then verify the RouterPlus model for the user's key through authenticated `/v1/models`, use an OpenAI-family model for JSON schema output, enable live mode, run the small schema smoke and full Golden Path. Request push/deploy approval only after reviewing the concrete commit/configuration. Push to the NEW origin without force; link/create a dedicated Vercel project, configure secrets privately, deploy with Nitro's Vercel preset, verify the public user journey, and update this handoff with the URL and actual results.
+Then verify the RouterPlus model for the user's key through authenticated `/v1/models`, use an OpenAI-family model for JSON schema output, enable live mode, run the small schema smoke and full Golden Path. The user has authorized the free demo deployment and blocker fixes; avoid paid infrastructure or live inference without an approved budget. Configure live secrets privately only on this dedicated project, rebuild with Nitro's Vercel preset, and verify the real journey before replacing the working submission.
 
 Do not repeat the baseline investigation or mistake skipped live tests for successful integration. `/demo` is the tested fallback and must always be presented as a prepared offline example.
