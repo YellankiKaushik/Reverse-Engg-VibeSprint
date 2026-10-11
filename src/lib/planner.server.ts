@@ -152,6 +152,7 @@ export interface PersistArgs {
     parentVersionId: string | null;
     versionNumber: number;
     modelAlias: string;
+    generationSource?: { provider: string; model: string | null };
     promptVersion: string;
     activate: boolean;
     strategyPreference?: string | null;
@@ -174,7 +175,10 @@ export async function persistProposal(args: PersistArgs) {
                 scenario: args.scenario,
                 feasibility_score: Math.round(proposal.feasibility.score),
                 confidence_score: Math.round(proposal.confidence.score),
-                confidence_reasons: [...proposal.confidence.reasons, ...proposal.feasibility.reasons],
+                confidence_reasons: [
+                    ...proposal.confidence.reasons,
+                    ...proposal.feasibility.reasons,
+                ],
                 generated_by: "AI",
                 prompt_version: args.promptVersion,
                 model_alias: args.modelAlias,
@@ -226,7 +230,9 @@ export async function persistProposal(args: PersistArgs) {
                 nodes.map((n) => ({
                     user_id: userId,
                     plan_version_id: version.id,
-                    strategy_id: n.strategyKey ? (strategyIdByKey.get(n.strategyKey) ?? null) : null,
+                    strategy_id: n.strategyKey
+                        ? (strategyIdByKey.get(n.strategyKey) ?? null)
+                        : null,
                     node_type: n.nodeType,
                     title: n.title,
                     description: n.description,
@@ -239,6 +245,7 @@ export async function persistProposal(args: PersistArgs) {
                         successLikelihood: n.successLikelihood,
                         tempId: n.tempId,
                         expectedResult: n.expectedResult,
+                        ...(args.generationSource ? { aiGeneration: args.generationSource } : {}),
                     },
                 })),
             )
@@ -335,7 +342,8 @@ export async function persistProposal(args: PersistArgs) {
             target_plan_id: args.planId,
             target_version_id: version.id,
         });
-        if (error) throw new DomainError("INTERNAL_ERROR", `activate plan version: ${error.message}`);
+        if (error)
+            throw new DomainError("INTERNAL_ERROR", `activate plan version: ${error.message}`);
     }
 
     return { versionId: version.id, versionNumber: version.version_number };

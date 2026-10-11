@@ -15,13 +15,13 @@ function loadProjectEnv() {
 
 function testPublishableKey() {
     if (!process.env.SUPABASE_TEST_URL) {
-        return process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        return process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     }
 
     return (
-        process.env.SUPABASE_TEST_PUBLISHABLE_KEY ??
-        process.env.SUPABASE_TEST_ANON_KEY ??
-        process.env.SUPABASE_PUBLISHABLE_KEY ??
+        process.env.SUPABASE_TEST_PUBLISHABLE_KEY ||
+        process.env.SUPABASE_TEST_ANON_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY ||
         process.env.VITE_SUPABASE_PUBLISHABLE_KEY
     );
 }
@@ -32,14 +32,16 @@ function testSecretKey() {
     }
 
     return (
-        process.env.SUPABASE_TEST_SECRET_KEY ??
-        process.env.SUPABASE_TEST_SERVICE_ROLE_KEY ??
+        process.env.SUPABASE_TEST_SECRET_KEY ||
+        process.env.SUPABASE_TEST_SERVICE_ROLE_KEY ||
         process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 }
 
 function supabaseTestUrl() {
-    return process.env.SUPABASE_TEST_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    return (
+        process.env.SUPABASE_TEST_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+    );
 }
 
 function hasSupabaseLiveTestCredentials() {
@@ -49,7 +51,7 @@ function hasSupabaseLiveTestCredentials() {
 loadProjectEnv();
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
 
 function spawnNode(args, options = {}) {
     return spawn(process.execPath, args, {
@@ -63,11 +65,12 @@ async function waitForServer(url, timeoutMs = 120_000) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
             if (response.ok) return;
         } catch {
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            /* The server may still be starting. */
         }
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error(`Timed out waiting for ${url}`);
 }
@@ -87,12 +90,8 @@ async function run() {
     };
 
     if (runGolden && hasSupabaseLiveTestCredentials()) {
-        serverEnv.AI_PROVIDER_MODE = "live";
-        serverEnv.AI_PROVIDER_ALLOWLIST = "gemini,groq";
-        serverEnv.AI_ROUTE_FAST = "groq,gemini";
-        serverEnv.AI_ROUTE_PRIMARY = "gemini,groq";
-        serverEnv.AI_ROUTE_CRITIC = "gemini,groq";
-        serverEnv.AI_ROUTE_FALLBACK = "gemini,groq";
+        // Honor the same AI mode, routes, and allowlist used by the actual app.
+        // This permits RouterPlus through the existing OpenAI-compatible adapter.
         serverEnv.VITE_SUPABASE_URL = supabaseTestUrl();
         serverEnv.VITE_SUPABASE_PUBLISHABLE_KEY = testPublishableKey();
         serverEnv.SUPABASE_URL = supabaseTestUrl();

@@ -143,7 +143,7 @@ RUN_E2E_GOLDEN=true npm run test:e2e
 
 Vitest and Playwright load `.env` for live test configuration. For normal MVP verification, live Supabase tests use `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Optional `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, and `SUPABASE_TEST_SECRET_KEY` override those values when you want to point tests elsewhere; legacy `SUPABASE_TEST_ANON_KEY` and `SUPABASE_TEST_SERVICE_ROLE_KEY` are supported only as fallbacks. Live AI smoke tests require the target provider key and model env var.
 
-Live Supabase tests are safe for the shared MVP project: they create unique temporary users and test-owned rows, delete only those users at cleanup, and never truncate, drop, reset, or bulk-delete unrelated data. The authenticated E2E Golden Path runs the app against the same configured Supabase values and uses live Gemini/Groq routing; OpenRouter remains an optional fallback.
+Live Supabase tests are safe for the shared MVP project: they create unique temporary users and test-owned rows, delete only those users at cleanup, and never truncate, drop, reset, or bulk-delete unrelated data. The authenticated E2E Golden Path runs the app against the same configured Supabase values and honors the configured AI mode, provider routes, and allowlist. Run with deterministic mock AI first, then live RouterPlus or another configured provider.
 
 If Supabase CLI authentication is unavailable while bootstrapping the remote schema, run [supabase/FINAL_REMOTE_BOOTSTRAP.sql](supabase/FINAL_REMOTE_BOOTSTRAP.sql) once in the Supabase SQL Editor for the target project. That file is generated from the committed migrations and does not include destructive reset/delete operations.
 

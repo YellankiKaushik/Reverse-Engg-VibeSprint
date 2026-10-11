@@ -10,19 +10,14 @@ import {
 } from "../helpers/test-env";
 
 loadProjectEnv();
-const runGolden =
-    process.env["RUN_E2E_GOLDEN"] === "true" &&
-    hasSupabaseLiveTestCredentials();
+const runGolden = process.env["RUN_E2E_GOLDEN"] === "true" && hasSupabaseLiveTestCredentials();
 
 test.describe("optional authenticated ReversePath Golden Path", () => {
     test.setTimeout(180_000);
 
-    test.skip(
-        !runGolden,
-        "Set RUN_E2E_GOLDEN=true with Supabase credentials to run this flow.",
-    );
+    test.skip(!runGolden, "Set RUN_E2E_GOLDEN=true with Supabase credentials to run this flow.");
 
-    test("authenticated user can complete the ReversePath golden path with live MVP AI", async ({
+    test("authenticated user can complete the ReversePath golden path with configured AI", async ({
         page,
     }) => {
         const debugGolden = process.env["PLAYWRIGHT_DEBUG_GOLDEN"] === "true";
@@ -57,14 +52,10 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
         const secondEmail = `${runId}-b@example.test`;
         const url = supabaseTestUrl()!;
         const secretKey = testSecretKey()!;
-        const admin = createClient(
-            url,
-            secretKey,
-            {
-                global: { fetch: createSupabaseTestFetch(secretKey) },
-                auth: { persistSession: false, autoRefreshToken: false },
-            },
-        );
+        const admin = createClient(url, secretKey, {
+            global: { fetch: createSupabaseTestFetch(secretKey) },
+            auth: { persistSession: false, autoRefreshToken: false },
+        });
         const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
         const secondCreated = await admin.auth.admin.createUser({
             email: secondEmail,
@@ -116,9 +107,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                 );
             await page.getByRole("button", { name: /analyse objective/i }).click();
 
-            await expect(
-                page.getByRole("heading", { name: /product design/i }),
-            ).toBeVisible();
+            await expect(page.getByRole("heading", { name: /product design/i })).toBeVisible();
             if (
                 await page
                     .getByRole("button", { name: /save answers/i })
@@ -182,12 +171,25 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(page.locator("main").getByText(/^Risks & premortem$/)).toBeVisible();
             await expect(page.locator("main").getByText(/^Execution frontier/)).toBeVisible();
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
+            const progressPanel = page
+                .locator("div.panel")
+                .filter({ has: page.getByText("Progress", { exact: true }) });
+            const initialProgress = await progressPanel.innerText();
 
             await page
                 .getByRole("button", { name: /^done$/i })
                 .first()
                 .click();
-            await expect(page.locator("main").getByText(/\bDONE\b/).first()).toBeVisible();
+            await expect(
+                page
+                    .locator("main")
+                    .getByText(/\bDONE\b/)
+                    .first(),
+            ).toBeVisible();
+            await expect(progressPanel).not.toHaveText(initialProgress);
+            const completedProgress = await progressPanel.innerText();
+            await page.reload();
+            await expect(progressPanel).toHaveText(completedProgress);
 
             await page
                 .getByPlaceholder(/what moved/i)
@@ -237,7 +239,9 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
 
             const userAPlanUrl = page.url();
             await page.getByRole("button", { name: /sign out/i }).click();
-            await expect(page.getByRole("heading", { name: /sign in to reversepath/i })).toBeVisible();
+            await expect(
+                page.getByRole("heading", { name: /sign in to reversepath/i }),
+            ).toBeVisible();
 
             await signIn(email);
             await page.goto(userAPlanUrl);

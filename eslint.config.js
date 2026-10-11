@@ -9,6 +9,10 @@ export default tseslint.config(
         ignores: [
             "dist",
             ".output",
+            ".vercel",
+            ".wrangler",
+            "test-results",
+            "playwright-report",
             ".vinxi",
             // Auto-generated integration files; edits are overwritten by the platform.
             "src/integrations/supabase/previewAuthStorage.ts",

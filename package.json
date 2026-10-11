@@ -6,9 +6,13 @@
     "scripts": {
         "dev": "vite dev",
         "build": "vite build",
+        "build:node": "node scripts/build.mjs node-server",
+        "build:vercel": "node scripts/build.mjs vercel",
+        "start": "node --env-file-if-exists=.env .output/server/index.mjs",
         "build:dev": "vite build --mode development",
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",
+        "check:env": "node scripts/check-env.mjs",
         "lint": "eslint .",
         "test": "vitest run tests/unit tests/integration tests/db",
         "test:unit": "vitest run tests/unit",

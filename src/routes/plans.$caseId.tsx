@@ -124,7 +124,7 @@ function PlanDetail() {
     }, [loading, user, navigate]);
 
     const bundle = useQuery({
-        queryKey: ["case", caseId, viewVersionId],
+        queryKey: ["case", caseId, user?.id, viewVersionId],
         queryFn: () =>
             fetchBundle({ data: viewVersionId ? { caseId, versionId: viewVersionId } : { caseId } }),
         enabled: !!user,
@@ -167,6 +167,18 @@ function PlanDetail() {
     const edges = useMemo(() => (plan?.edges ?? []) as unknown as GraphEdge[], [plan?.edges]);
 
     const frontier = useMemo(() => computeFrontier(nodes, edges), [nodes, edges]);
+    const milestoneFrontier = useMemo(
+        () =>
+            computeFrontier(
+                nodes.map((node) =>
+                    node.node_type === "MILESTONE"
+                        ? { ...node, node_type: "ACTION" as const }
+                        : node,
+                ),
+                edges,
+            ),
+        [nodes, edges],
+    );
     const progress = useMemo(() => progressOf(nodes), [nodes]);
     const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
     const prereqsOf = useMemo(() => {
@@ -227,6 +239,15 @@ function PlanDetail() {
     const questions = intake.questions;
     const bottleneck = nodes.find((n) => n.id === plan?.version?.bottleneck_node_id) ?? null;
     const viewingCandidate = plan?.version?.state === "CANDIDATE";
+    const generation = nodes.find((node) => node.metadata?.["aiGeneration"])?.metadata[
+        "aiGeneration"
+    ];
+    const source =
+        generation && typeof generation === "object" && !Array.isArray(generation)
+            ? (generation as { provider?: string; model?: string | null })
+            : null;
+
+
 
     return (
         <AppShell>
@@ -486,6 +507,11 @@ function PlanDetail() {
 
                 {!plan ? (
                     <section className="panel p-6 text-center">
+                        <p className="mb-3 text-sm text-muted-foreground">
+                            {data.generationMode === "mock"
+                                ? "Demo AI mode — this plan will use deterministic mock output, with no live AI request."
+                                : "Live AI mode — generation uses the configured server-side provider."}
+                        </p>
                         <h2 className="text-lg font-medium">Ready to reverse-engineer</h2>
                         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                             ReversePath will map requirements and gaps backwards from your outcome, compare
@@ -578,6 +604,69 @@ function PlanDetail() {
                             </section>
                         ) : null}
 
+                        {nodes.some((node) => node.node_type === "MILESTONE") ? (
+                            <section className="panel p-5">
+                                <h2 className="font-medium">Milestone reviews</h2>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Confirm each milestone when its prerequisites and success
+                                    criteria are met.
+                                </p>
+                                <ul className="mt-3 space-y-3">
+                                    {nodes
+                                        .filter((node) => node.node_type === "MILESTONE")
+                                        .map((node) => {
+                                            const ready = milestoneFrontier.ready.some(
+                                                (candidate) => candidate.node.id === node.id,
+                                            );
+                                            return (
+                                                <li
+                                                    key={node.id}
+                                                    className="flex flex-wrap items-center justify-between gap-3"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm">{node.title}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {node.description}
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={
+                                                            busy ||
+                                                            !ready ||
+                                                            plan.version?.state !== "ACTIVE"
+                                                        }
+                                                        onClick={() =>
+                                                            guarded("Milestone completed.", () =>
+                                                                runUpdateAction({
+                                                                    data: {
+                                                                        nodeId: node.id,
+                                                                        status: "DONE",
+                                                                    },
+                                                                }),
+                                                            )
+                                                        }
+                                                    >
+                                                        {node.status === "DONE"
+                                                            ? "Milestone complete"
+                                                            : ready
+                                                              ? "Complete milestone"
+                                                              : "Prerequisites pending"}
+                                                    </Button>
+                                                </li>
+                                            );
+                                        })}
+                                </ul>
+                            </section>
+                        ) : null}
+                        <p className="text-xs text-muted-foreground" role="status">
+                            {source?.provider === "mock"
+                                ? "Demo plan · deterministic mock output · no live AI was used"
+                                : source?.provider
+                                  ? `Live AI plan · ${source.provider} · ${source.model ?? "configured model"}`
+                                  : "Saved plan · generation source was not recorded for this version"}
+                        </p>
                         {plan.version?.summary ? (
                             <section className="panel p-5">
                                 <p className="label-mono">Read of the situation</p>

@@ -135,6 +135,7 @@ export const generatePlan = createServerFn({ method: "POST" })
                 parentVersionId: null,
                 versionNumber,
                 modelAlias: meta.modelAlias,
+                generationSource: { provider: meta.provider, model: meta.providerModel },
                 promptVersion: PROMPT_VERSION,
                 activate: true,
                 strategyPreference: data.strategyPreference,
@@ -278,6 +279,7 @@ export const replan = createServerFn({ method: "POST" })
                 parentVersionId: activeVersionId,
                 versionNumber,
                 modelAlias: meta.modelAlias,
+                generationSource: { provider: meta.provider, model: meta.providerModel },
                 promptVersion: PROMPT_VERSION,
                 activate: false,
             });

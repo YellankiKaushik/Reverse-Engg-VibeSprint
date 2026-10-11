@@ -1,6 +1,10 @@
 node_modules
 dist
 .output
+.vercel
+.wrangler
+test-results
+playwright-report
 .vinxi
 pnpm-lock.yaml
 package-lock.json

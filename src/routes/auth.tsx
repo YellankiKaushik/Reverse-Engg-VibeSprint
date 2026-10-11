@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { lovable } from "@/integrations/lovable/index";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseConfigurationError } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
     head: () => ({
@@ -34,7 +34,9 @@ function AuthPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [busy, setBusy] = useState(false);
-    const { session, loading } = useAuth();
+    const [notice, setNotice] = useState<string | null>(null);
+    const { session, loading, error: authError } = useAuth();
+    const configurationError = supabaseConfigurationError();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -43,15 +45,24 @@ function AuthPage() {
 
     async function submit(event: React.FormEvent) {
         event.preventDefault();
+        if (configurationError || busy) return;
+        setNotice(null);
         setBusy(true);
         try {
             if (mode === "signup") {
-                const { error } = await supabase.auth.signUp({
+                const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
                     options: { emailRedirectTo: window.location.origin },
                 });
                 if (error) throw error;
+                if (!data.session) {
+                    setNotice(
+                        "Check your email to confirm your account, then return here to sign in.",
+                    );
+                    setMode("signin");
+                    return;
+                }
                 toast.success("Account created. You're signed in.");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -66,15 +77,27 @@ function AuthPage() {
     }
 
     async function google() {
-        const result = await lovable.auth.signInWithOAuth("google", {
-            redirect_uri: window.location.origin,
-        });
-        if (result.error) {
-            toast.error(result.error.message ?? "Google sign-in failed.");
-            return;
+        if (configurationError || busy) return;
+        setBusy(true);
+        try {
+            if (import.meta.env["VITE_AUTH_PROVIDER"] === "lovable") {
+                const result = await lovable.auth.signInWithOAuth("google", {
+                    redirect_uri: window.location.origin,
+                });
+                if (result.error) throw result.error;
+                if (!result.redirected) navigate({ to: "/" });
+            } else {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: window.location.origin },
+                });
+                if (error) throw error;
+            }
+        } catch (error) {
+            toast.error((error as Error).message || "Google sign-in failed.");
+        } finally {
+            setBusy(false);
         }
-        if (result.redirected) return;
-        navigate({ to: "/" });
     }
 
     return (
@@ -89,7 +112,22 @@ function AuthPage() {
                 </p>
 
                 <div className="panel mt-6 p-5">
-                    <Button variant="outline" className="w-full" onClick={google}>
+                    {authError ? (
+                        <p role="alert" className="mb-4 text-sm text-destructive">
+                            {authError}
+                        </p>
+                    ) : null}
+                    {notice ? (
+                        <p role="status" className="mb-4 text-sm text-primary">
+                            {notice}
+                        </p>
+                    ) : null}
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={google}
+                        disabled={loading || busy || !!configurationError}
+                    >
                         Continue with Google
                     </Button>
 
@@ -106,6 +144,7 @@ function AuthPage() {
                                 id="email"
                                 type="email"
                                 required
+                                disabled={loading || busy}
                                 autoComplete="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -117,23 +156,33 @@ function AuthPage() {
                                 id="password"
                                 type="password"
                                 required
+                                disabled={loading || busy}
                                 minLength={8}
-                                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                                autoComplete={
+                                    mode === "signin" ? "current-password" : "new-password"
+                                }
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
-                        <Button type="submit" className="w-full" disabled={busy}>
+                        <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={loading || busy || !!configurationError}
+                        >
                             {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}
                         </Button>
                     </form>
 
                     <button
                         type="button"
+                        disabled={loading || busy}
                         className="mt-4 w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
                         onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
                     >
-                        {mode === "signin" ? "No account yet? Create one" : "Already have an account? Sign in"}
+                        {mode === "signin"
+                            ? "No account yet? Create one"
+                            : "Already have an account? Sign in"}
                     </button>
                 </div>
             </div>

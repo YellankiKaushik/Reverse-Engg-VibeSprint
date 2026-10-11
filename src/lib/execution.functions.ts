@@ -10,55 +10,22 @@ export const updateAction = createServerFn({ method: "POST" })
         z
             .object({
                 nodeId: z.string().uuid(),
-                status: z.enum(["PENDING", "IN_PROGRESS", "DONE", "BLOCKED", "SKIPPED", "DEFERRED"]),
+                status: z.enum([
+                    "PENDING",
+                    "IN_PROGRESS",
+                    "DONE",
+                    "BLOCKED",
+                    "SKIPPED",
+                    "DEFERRED",
+                ]),
                 note: z.string().max(1200).optional(),
                 dueAt: z.string().datetime().nullable().optional(),
             })
             .parse(input),
     )
     .handler(async ({ data, context }) => {
-        const { supabase, userId } = context;
-
-        const node = await supabase
-            .from("plan_nodes")
-            .select("id, title")
-            .eq("id", data.nodeId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (!node.data) throw new Error("That action could not be found.");
-
-        const { error } = await supabase
-            .from("plan_nodes")
-            .update({ status: data.status })
-            .eq("id", data.nodeId)
-            .eq("user_id", userId);
-        if (error) throw new Error(error.message);
-
-        const actionPatch: {
-            completed_at: string | null;
-            result?: { note: string } | null;
-            due_at?: string | null;
-        } = {
-            completed_at: data.status === "DONE" ? new Date().toISOString() : null,
-        };
-        if (data.note !== undefined) actionPatch.result = data.note ? { note: data.note } : null;
-        if (data.dueAt !== undefined) actionPatch.due_at = data.dueAt;
-
-        await supabase
-            .from("actions")
-            .update(actionPatch as never)
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId);
-
-        const telemetry = await import("@/lib/telemetry.server");
-        await telemetry.recordAudit({
-            userId,
-            action: `ACTION_${data.status}`,
-            resource: "plan_nodes",
-            resourceId: data.nodeId,
-        });
-
-        return { ok: true };
+        const { updateActionState } = await import("@/lib/action-execution.server");
+        return updateActionState(data, context);
     });
 
 /** FR-021 — the user can edit AI-authored actions. */
@@ -91,8 +58,11 @@ export const editAction = createServerFn({ method: "POST" })
             .eq("plan_node_id", data.nodeId)
             .eq("user_id", userId)
             .maybeSingle();
+        if (existing.error)
+            throw new Error(`Action details could not be loaded: ${existing.error.message}`);
+        if (!existing.data) throw new Error("That action could not be found.");
 
-        await supabase
+        const actionEdit = await supabase
             .from("actions")
             .update({
                 completion_criteria: data.completionCriteria,
@@ -101,6 +71,8 @@ export const editAction = createServerFn({ method: "POST" })
             })
             .eq("plan_node_id", data.nodeId)
             .eq("user_id", userId);
+        if (actionEdit.error)
+            throw new Error(`Action details could not be saved: ${actionEdit.error.message}`);
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({
@@ -125,7 +97,13 @@ export const submitCheckIn = createServerFn({ method: "POST" })
                 changedFacts: z
                     .array(
                         z.object({
-                            category: z.enum(["RESOURCE", "CONSTRAINT", "PREFERENCE", "FACT", "MEASURE"]),
+                            category: z.enum([
+                                "RESOURCE",
+                                "CONSTRAINT",
+                                "PREFERENCE",
+                                "FACT",
+                                "MEASURE",
+                            ]),
                             key: z.string().min(1).max(80),
                             value: z.string().min(1).max(600),
                         }),
@@ -144,6 +122,7 @@ export const submitCheckIn = createServerFn({ method: "POST" })
             .eq("id", data.planId)
             .eq("user_id", userId)
             .maybeSingle();
+        if (plan.error) throw new Error(`That plan could not be loaded: ${plan.error.message}`);
         if (!plan.data) throw new Error("That plan could not be found.");
         const planRow = plan.data;
 
@@ -157,7 +136,7 @@ export const submitCheckIn = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
 
         if (data.changedFacts.length > 0) {
-            await supabase.from("case_context_facts").insert(
+            const factsUpdate = await supabase.from("case_context_facts").insert(
                 data.changedFacts.map((f) => ({
                     user_id: userId,
                     case_id: planRow.case_id,
@@ -168,6 +147,8 @@ export const submitCheckIn = createServerFn({ method: "POST" })
                     confidence: 1,
                 })),
             );
+            if (factsUpdate.error)
+                throw new Error(`Changed context could not be saved: ${factsUpdate.error.message}`);
         }
 
         return {

@@ -19,13 +19,15 @@ export function loadProjectEnv() {
 
 export function testPublishableKey() {
     if (!process.env["SUPABASE_TEST_URL"]) {
-        return process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+        return (
+            process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]
+        );
     }
 
     return (
-        process.env["SUPABASE_TEST_PUBLISHABLE_KEY"] ??
-        process.env["SUPABASE_TEST_ANON_KEY"] ??
-        process.env["SUPABASE_PUBLISHABLE_KEY"] ??
+        process.env["SUPABASE_TEST_PUBLISHABLE_KEY"] ||
+        process.env["SUPABASE_TEST_ANON_KEY"] ||
+        process.env["SUPABASE_PUBLISHABLE_KEY"] ||
         process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]
     );
 }
@@ -36,14 +38,18 @@ export function testSecretKey() {
     }
 
     return (
-        process.env["SUPABASE_TEST_SECRET_KEY"] ??
-        process.env["SUPABASE_TEST_SERVICE_ROLE_KEY"] ??
+        process.env["SUPABASE_TEST_SECRET_KEY"] ||
+        process.env["SUPABASE_TEST_SERVICE_ROLE_KEY"] ||
         process.env["SUPABASE_SERVICE_ROLE_KEY"]
     );
 }
 
 export function supabaseTestUrl() {
-    return process.env["SUPABASE_TEST_URL"] || process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"];
+    return (
+        process.env["SUPABASE_TEST_URL"] ||
+        process.env["SUPABASE_URL"] ||
+        process.env["VITE_SUPABASE_URL"]
+    );
 }
 
 export function hasSupabaseLiveTestCredentials() {

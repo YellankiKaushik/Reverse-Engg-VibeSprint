@@ -119,12 +119,14 @@ export function isMockAiEnabled() {
 
 function allowedProviders() {
     const configured = parseProviderList(process.env["AI_PROVIDER_ALLOWLIST"]);
-    return configured.length ? new Set(configured) : new Set(PROVIDER_IDS);
+    return process.env["AI_PROVIDER_ALLOWLIST"]?.trim()
+        ? new Set(configured)
+        : new Set(PROVIDER_IDS);
 }
 
 export function routeForAlias(alias: ModelAlias) {
     const configured = parseProviderList(process.env[`AI_ROUTE_${alias}`]);
-    return configured.length ? configured : DEFAULT_ROUTE_BY_ALIAS[alias];
+    return process.env[`AI_ROUTE_${alias}`]?.trim() ? configured : DEFAULT_ROUTE_BY_ALIAS[alias];
 }
 
 export function timeoutMs() {
@@ -144,7 +146,7 @@ export function modelEnvName(providerId: ProviderId, alias: ModelAlias) {
 
 export function modelForProviderAlias(providerId: ProviderId, alias: ModelAlias) {
     return (
-        process.env[modelEnvName(providerId, alias)] ??
+        process.env[modelEnvName(providerId, alias)] ||
         process.env[`${PROVIDER_CONFIG[providerId].modelPrefix}_DEFAULT`]
     );
 }
@@ -177,7 +179,7 @@ function createProvider(providerId: ProviderId, apiKey: string) {
     const config = PROVIDER_CONFIG[providerId];
     return createOpenAICompatible({
         name: config.name,
-        baseURL: process.env[config.baseUrlEnv] ?? config.defaultBaseUrl,
+        baseURL: process.env[config.baseUrlEnv] || config.defaultBaseUrl,
         ...(providerId !== "lovable-ai" ? { apiKey } : {}),
         headers: createHeaders(providerId, apiKey),
         supportsStructuredOutputs: true,

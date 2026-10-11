@@ -29,6 +29,12 @@ const PROVIDERS: Array<{
         fastModelEnv: "OPENROUTER_MODEL_FAST",
         defaultModelEnv: "OPENROUTER_MODEL_DEFAULT",
     },
+    {
+        id: "openai",
+        keyEnv: "OPENAI_API_KEY",
+        fastModelEnv: "OPENAI_MODEL_FAST",
+        defaultModelEnv: "OPENAI_MODEL_DEFAULT",
+    },
 ];
 
 loadProjectEnv();
@@ -41,7 +47,8 @@ afterEach(() => {
 
 function isOptionalOpenRouterUnavailable(providerId: ProviderId, error: unknown) {
     if (providerId !== "openrouter") return false;
-    const anyError = error as { statusCode?: number; status?: number; message?: string } | undefined;
+    const anyError = error as
+        { statusCode?: number; status?: number; message?: string } | undefined;
     const status = anyError?.statusCode ?? anyError?.status;
     return status === 401 || /missing authentication|unauthorized/i.test(anyError?.message ?? "");
 }
@@ -76,7 +83,9 @@ describe("optional live AI provider smoke", () => {
                     });
                 } catch (error) {
                     if (isOptionalOpenRouterUnavailable(provider.id, error)) {
-                        console.warn("OpenRouter optional unavailable: authentication was rejected.");
+                        console.warn(
+                            "OpenRouter optional unavailable: authentication was rejected.",
+                        );
                         return;
                     }
                     throw error;

@@ -42,6 +42,7 @@ const aiEnvKeys = [
     "OPENROUTER_MODEL_FALLBACK",
     "OPENAI_ENABLED",
     "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
     "OPENAI_MODEL_DEFAULT",
     "OPENAI_MODEL_FAST",
     "OPENAI_MODEL_PRIMARY",
@@ -106,6 +107,25 @@ describe("AI provider router", () => {
 
         expect(isMockAiEnabled()).toBe(true);
         expect(candidatesForAlias("FAST")).toEqual([]);
+    });
+
+    it("does not call other providers when an explicit allowlist contains a typo", () => {
+        vi.stubEnv("AI_PROVIDER_ALLOWLIST", "routerplus");
+        vi.stubEnv("OPENAI_API_KEY", "test-key");
+        vi.stubEnv("OPENAI_MODEL_DEFAULT", "test-model");
+        expect(candidatesForAlias("PRIMARY")).toEqual([]);
+    });
+
+    it("uses the default model when role-specific values in .env.example are empty", () => {
+        vi.stubEnv("OPENAI_ENABLED", "true");
+        vi.stubEnv("OPENAI_API_KEY", "test-routerplus-key");
+        vi.stubEnv("OPENAI_BASE_URL", "https://api.routerplus.com/v1");
+        vi.stubEnv("OPENAI_MODEL_DEFAULT", "test-model");
+        vi.stubEnv("OPENAI_MODEL_FAST", "");
+        vi.stubEnv("AI_PROVIDER_ALLOWLIST", "openai");
+        const [candidate] = candidatesForAlias("FAST");
+        expect(candidate?.providerId).toBe("openai");
+        expect(candidate?.modelId).toBe("test-model");
     });
 
     it("bounds timeout and retry configuration", () => {
