@@ -13,7 +13,8 @@ loadProjectEnv();
 const runGolden = process.env["RUN_E2E_GOLDEN"] === "true" && hasSupabaseLiveTestCredentials();
 
 test.describe("optional authenticated ReversePath Golden Path", () => {
-    test.setTimeout(180_000);
+    // The live flow includes intake, planning and two replans with explanations.
+    test.setTimeout(process.env["AI_PROVIDER_MODE"] === "live" ? 480_000 : 180_000);
 
     test.skip(!runGolden, "Set RUN_E2E_GOLDEN=true with Supabase credentials to run this flow.");
 
@@ -107,7 +108,9 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                 );
             await page.getByRole("button", { name: /analyse objective/i }).click();
 
-            await expect(page.getByRole("heading", { name: /product design/i })).toBeVisible();
+            await expect(page.getByRole("heading", { name: /product design/i })).toBeVisible({
+                timeout: 90_000,
+            });
             if (
                 await page
                     .getByRole("button", { name: /save answers/i })
@@ -141,15 +144,6 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             const generateButton = page.getByRole("button", { name: /generate plan/i });
             await expect(generateButton).toBeEnabled();
             await generateButton.click();
-            if (
-                !(await page
-                    .getByRole("button", { name: /mapping the graph/i })
-                    .isVisible()
-                    .catch(() => false))
-            ) {
-                await page.waitForTimeout(750);
-                await generateButton.click();
-            }
             try {
                 await expect(page.getByText(/plan generated/i)).toBeVisible({ timeout: 90_000 });
             } catch (error) {
@@ -170,11 +164,14 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(page.locator("main").getByText(/^Assumptions$/)).toBeVisible();
             await expect(page.locator("main").getByText(/^Risks & premortem$/)).toBeVisible();
             await expect(page.locator("main").getByText(/^Execution frontier/)).toBeVisible();
+            if (process.env["AI_PROVIDER_MODE"] === "live") {
+                await expect(page.getByText(/Live AI plan · openai · /)).toBeVisible();
+            }
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
             const progressPanel = page
                 .locator("div.panel")
                 .filter({ has: page.getByText("Progress", { exact: true }) });
-            const initialProgress = await progressPanel.innerText();
+            const initialProgress = (await progressPanel.textContent()) ?? "";
 
             await page
                 .getByRole("button", { name: /^done$/i })
@@ -187,7 +184,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                     .first(),
             ).toBeVisible();
             await expect(progressPanel).not.toHaveText(initialProgress);
-            const completedProgress = await progressPanel.innerText();
+            const completedProgress = (await progressPanel.textContent()) ?? "";
             await page.reload();
             await expect(progressPanel).toHaveText(completedProgress);
 
@@ -206,7 +203,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.getByPlaceholder(/new value/i).fill("3 hours per week");
             await page.getByRole("button", { name: /propose a revised plan/i }).click();
             await expect(page.getByText(/Version \d+ is a candidate/i)).toBeVisible({
-                timeout: 90_000,
+                timeout: 180_000,
             });
             await expect(page.getByText(/what changed in this version/i)).toBeVisible();
             await expect(page.getByRole("button", { name: /^reject$/i }).first()).toBeVisible();
@@ -223,7 +220,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.getByPlaceholder(/new value/i).fill("3 hours per week");
             await page.getByRole("button", { name: /propose a revised plan/i }).click();
             await expect(page.getByText(/Version \d+ is a candidate/i)).toBeVisible({
-                timeout: 90_000,
+                timeout: 180_000,
             });
             await page
                 .getByRole("button", { name: /accept this version|^accept$/i })
@@ -254,6 +251,38 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.goto(userAPlanUrl);
             await expect(page.getByRole("heading", { name: /couldn't be loaded/i })).toBeVisible();
         } finally {
+            if (created.data.user?.id && process.env["AI_PROVIDER_MODE"] === "live") {
+                const usage = await admin
+                    .from("ai_usage_events")
+                    .select(
+                        "provider, model_alias, input_tokens, output_tokens, outcome, schema_valid",
+                    )
+                    .eq("user_id", created.data.user.id);
+                if (!usage.error) {
+                    console.log(
+                        "LIVE_AI_TEST_USAGE",
+                        JSON.stringify({
+                            calls: usage.data.length,
+                            inputTokens: usage.data.reduce(
+                                (sum, row) => sum + (row.input_tokens ?? 0),
+                                0,
+                            ),
+                            outputTokens: usage.data.reduce(
+                                (sum, row) => sum + (row.output_tokens ?? 0),
+                                0,
+                            ),
+                            models: [
+                                ...new Set(
+                                    usage.data.map((row) => `${row.provider}:${row.model_alias}`),
+                                ),
+                            ],
+                            schemaValidated: usage.data.every(
+                                (row) => row.schema_valid && row.outcome === "SUCCESS",
+                            ),
+                        }),
+                    );
+                }
+            }
             if (created.data.user?.id) await admin.auth.admin.deleteUser(created.data.user.id);
             if (secondCreated.data.user?.id) {
                 await admin.auth.admin.deleteUser(secondCreated.data.user.id);

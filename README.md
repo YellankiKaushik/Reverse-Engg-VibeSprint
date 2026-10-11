@@ -8,9 +8,9 @@ The authoritative architecture is in [docs/DEEP_TECHNICAL_ARCHITECTURE.md](docs/
 
 Public application: https://reversepath-vibesprint.vercel.app. Verified fallback: https://reversepath-vibesprint.vercel.app/demo.
 
-The hosted submission currently runs the prepared offline example, clearly labelled **no live AI**. Its task completion is saved in browser storage. Live email authentication, database persistence, and RouterPlus generation await the dedicated Supabase project and private credentials; they are not yet verified or enabled in production.
+The hosted submission currently runs the prepared offline example, clearly labelled **no live AI**, with completion in browser storage. Local live email authentication, Supabase persistence and RouterPlus generation are now tested against the dedicated ReversePath project. The full live Golden Path passed on `gpt-6-luna`; Production environment configuration and hosted live verification remain pending.
 
-See [setup](docs/VIBE_SPRINT_SETUP.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), and [final submission report](docs/VIBE_SPRINT_FINAL_REPORT.md) for configuration and actual test results. The sprint configuration uses RouterPlus through the existing `openai` adapter, with zero retries and mock mode until real integration passes.
+See [setup](docs/VIBE_SPRINT_SETUP.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), and [final submission report](docs/VIBE_SPRINT_FINAL_REPORT.md) for configuration and actual test results. The sprint configuration uses RouterPlus through the existing `openai` adapter, OpenAI-only routes and zero retries. Secrets remain server-side; `/demo` always remains a prepared example.
 
 ## Stack
 
@@ -39,7 +39,7 @@ AI_PROVIDER_MODE=mock
 
 ## Supabase Setup
 
-Use the dedicated **ReversePath-VibeSprint** Supabase project. Verify its reference before applying the migrations; never use the unrelated LoadGuard 3D database:
+Use the dedicated **ReversePath** Supabase project, reference `kvytcttuskwwbmmmjjri` (Singapore). Its migrations are already applied. Verify the reference before any later migration; never use the unrelated LoadGuard 3D database:
 
 ```sh
 supabase login

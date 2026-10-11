@@ -2,6 +2,8 @@
 
 ## Dedicated Supabase project
 
+**Current project is already created and migrated:** ReversePath, reference `kvytcttuskwwbmmmjjri`, Singapore, user's kaushikyellanki account. Use the authenticated CLI for this account; the connected MCP account differs. Four original migrations and one helper-permission security migration are applied. Do not create another project, run the bootstrap, or repeat initialization. Instructions below remain a reference for private configuration.
+
 1. Open https://supabase.com/dashboard and select **New project** in your own organization.
 2. Name it **ReversePath-VibeSprint**. Choose an available Asia region near your users and a strong database password. Keep the password private; the application does not need that password in `.env`.
 3. Wait until the project is active. Record its project reference ID.
@@ -35,7 +37,7 @@ npx supabase db push --dry-run
 
 Verify the linked reference matches the newly created project, then apply the reviewed migrations with `npx supabase db push`. Do not reset any remote database. CLI login/link/apply may require account interaction; ask the agent to continue after you provide the **reference ID**, not secrets.
 
-If CLI authentication is unavailable, open the **new project's SQL Editor** and run `supabase/FINAL_REMOTE_BOOTSTRAP.sql` once. This bootstrap mirrors the four source migrations. It is for an empty database and is not an idempotent script. Do not run it on an unrelated or populated project, and do not run both bootstrap and an untracked CLI migration application. If using the SQL Editor, reconcile migration history before later `db push` calls.
+The legacy `supabase/FINAL_REMOTE_BOOTSTRAP.sql` mirrors only the four original migrations. Do not run it on the configured project; CLI migration history is authoritative, including the fifth helper-permission security migration. Never mix bootstrap execution with the applied CLI workflow.
 
 In Authentication / URL Configuration, allow `http://localhost:5173` and `http://127.0.0.1:4173` for local work; add the deployment origin when it exists. Keep email confirmation enabled if desired: signup now explains that email confirmation is required. Google sign-in requires configuring the Google provider separately; email sign-in is sufficient for the MVP.
 

@@ -16,11 +16,15 @@ Work directly in `C:\Users\YellankiKaushik\Desktop\KAUSHIK\ALL Projects\VibeSpri
 
 ## User decisions
 
-Latest live mission: user authorizes safe fixes and deployment to the existing Vercel project, and less than $2 RouterPlus test expenditure from existing credits. No new paid infrastructure. User approved the Open AI organization (`oljjsitrxzkuyjdzsfpc`), Mumbai region and strictly $0 project creation. Organization lookup confirms `plan=free`. Connector `get_cost` and `confirm_cost` are unavailable; the available browser is signed out, so the user was given the minimum dashboard creation steps. Connected inventory still contains only LoadGuard 3D. User said “key ready,” but the saved workspace `.env` still has an empty OPENAI_API_KEY; no alternate local env file exists. Asked for the exact saved file or corrected save, never the key itself. Requested RouterPlus endpoint, OpenAI-only routes, zero retries, production origin and direct Supabase auth are prepared privately; mode remains mock. No remote database was changed and no real inference was made.
+User manually created **ReversePath**, reference `kvytcttuskwwbmmmjjri`, in their kaushikyellanki browser account's organization (`izsxmpprrxxqxjffwrar`), Singapore. The connector account differs: never use LoadGuard 3D. Authenticated CLI project listing verified name, reference, region and ACTIVE_HEALTHY status; the private local URL and project reference match. CLI is linked to this project.
 
-Latest requested checks: TypeScript and Vercel build passed; tests 38 passed / 6 skipped; environment check is blocked by five missing Supabase values. All four public production browser tests passed again, including `/demo`. `docs/VIBE_SPRINT_FINAL_REPORT.md` records the honest incomplete live acceptance status.
+All four original migrations were applied through CLI after a dry run and confirmation that public tables were empty. No bootstrap, reset, truncation or existing-data deletion was performed. All 16 tables have RLS/policies. A fifth migration, `20261011095115_restrict_internal_ownership_helpers.sql`, fixes the helper search path and revokes direct RPC execution of internal trigger helpers. RLS tests passed afterward; authenticated owner-checked activation remains available.
 
-The user has no confirmed ReversePath Supabase project. They requested a **new dedicated project named ReversePath-VibeSprint**, safe local work meanwhile, and `AI_PROVIDER_MODE=mock` until live AI is configured. They will save a RouterPlus replacement key privately in `.env` as `OPENAI_API_KEY`. Do not ask them to paste secrets into chat. Do not reuse the connected inactive LoadGuard 3D project.
+Local credentials are privately configured. Server URL/publishable key were mirrored from the browser settings; the matching project's saved test secret supplied SUPABASE_SERVICE_ROLE_KEY. The replacement RouterPlus key now authenticates; obsolete duplicate assignments were removed without printing values. Clear inherited OPENAI_API_KEY before local commands. Confirmed model `gpt-6-luna`; OpenAI-only routes, zero retries, mode live after the schema smoke passed. User authorizes less than $2 test inference and safe deployment to the existing Vercel project, no new paid infrastructure.
+
+Latest evidence: check:env, TypeScript and Vercel build pass; full suite 40 passed / 4 provider checks skipped; live OpenAI schema smoke 1 passed / 3 unrelated providers skipped; authenticated production-Node mock Golden Path passed; full live Golden Path passed in 3.8 minutes. The live run recorded six schema-valid calls, 9,851 input / 27,813 output tokens, all openai/gpt-6-luna. At public catalog rates the successful run estimates below $0.02 (not a billing receipt). Actual email signup succeeded and required confirmation; the disposable account was admin-confirmed for login and cleaned up. Email-link clicking was not automated.
+
+The user is importing the ignored private `.vercel/production.env` file (26 whitelisted settings) into Vercel Production and setting Supabase redirect URLs. Vercel currently reports no project Production variables; wait for “production configured,” verify completeness without exposing values, then deploy and test the hosted live Golden Path. Current production is still the verified prepared demo. Scan of 24 built client assets found zero private credential matches.
 
 ## Architecture preserved
 
@@ -29,7 +33,7 @@ React 19 / TypeScript, TanStack Start server functions, Query/Router, existing T
 ## Local implementation completed
 
 - `.gitignore`: all `.env.*` excluded except `.env.example`; credentials, local DB files, build outputs, deployment state, and dependencies excluded.
-- Created ignored `.env` from the example. Values are still unconfigured; mock mode remains enabled.
+- Created ignored `.env` from the example; now privately configured and validated through real Supabase/RouterPlus tests.
 - Public landing/sign-in render without Supabase config; sign-in shows a useful configuration message and disables unavailable actions.
 - Browser Supabase fallback does not reference undefined `process`; opaque server secret keys are rejected as public configuration.
 - Auth hook handles restore rejection and unmount cleanup.
@@ -100,16 +104,16 @@ IMPORTANT: the shell inherits a non-RouterPlus `OPENAI_API_KEY`; environment var
 
 ## Genuine outstanding blockers and limits
 
-1. Dedicated Supabase project not yet created/configured. Existing migrations have static validation only, not remote SQL execution. No existing database was changed.
-2. RouterPlus private key and authenticated model ID not configured. Public docs/catalog confirm compatible wire format, but no real paid inference has been made.
-3. Full authenticated Golden Path, real RLS, persisted completion after refresh, and live planning/replanning require those configurations.
-4. Hosted prepared demo is working and ready to submit. Preserve it while live credentials remain unavailable.
+1. Production Vercel variables and Supabase redirect URLs are being configured privately by the user. Do not deploy an unconfigured live release.
+2. Hosted authenticated live Golden Path remains to be executed after the new deployment; local real integration is verified.
+3. Live intake/planning/replanning take longer than mock generation. Golden Path timeouts now accommodate real sequential calls; no retries or extra providers are enabled.
+4. Hosted prepared demo is working and ready to submit. Preserve it as the fallback.
 5. Backend action/node edits use multiple writes under the existing API; errors are now surfaced, but these writes are not transactional. Remote failure/concurrency behavior requires real DB tests before claiming production reliability.
 
 ## Exact next task for Claude Code or Codex
 
-Read `docs/VIBE_SPRINT_SETUP.md`, obtain the **new project's reference ID** and privately configured `.env`, confirm the target is ReversePath-VibeSprint, apply the four reviewed migrations only to that empty project, and run `npm run check:env`. Keep AI mock initially. Run live Supabase RLS tests and the authenticated Golden Path against mock AI first. Fix failures from actual output.
+Database migrations and local integration are complete; do not apply the bootstrap or repeat project creation. Wait for the user's production-configuration confirmation, inspect Vercel Production names privately, compare values against the prepared import where retrievable, and ensure public VITE values are available at build time.
 
-Then verify the RouterPlus model for the user's key through authenticated `/v1/models`, use an OpenAI-family model for JSON schema output, enable live mode, run the small schema smoke and full Golden Path. The user has authorized the free demo deployment and blocker fixes; avoid paid infrastructure or live inference without an approved budget. Configure live secrets privately only on this dedicated project, rebuild with Nitro's Vercel preset, and verify the real journey before replacing the working submission.
+Deploy to existing reversepath-vibesprint on the verified free Hobby team without passing the old AI_PROVIDER_MODE=mock deployment override. Run the hosted live Golden Path with disposable accounts, verify /demo, update report and README, and push without rewriting history. Roll back to `dpl_CwW6fKNJW6yEgf6rCrpc5dmJjAzH` if the release fails and cannot be fixed safely. Keep total test inference below $2.
 
 Do not repeat the baseline investigation or mistake skipped live tests for successful integration. `/demo` is the tested fallback and must always be presented as a prepared offline example.
