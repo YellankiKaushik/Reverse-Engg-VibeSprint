@@ -13,6 +13,7 @@ export const test = base.extend({
                         headers: {
                             ...route.request().headers(),
                             "x-vercel-protection-bypass": token,
+                            "x-vercel-set-bypass-cookie": "true",
                         },
                     }),
             );

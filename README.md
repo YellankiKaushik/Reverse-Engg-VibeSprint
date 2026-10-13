@@ -8,9 +8,9 @@ The authoritative architecture is in [docs/DEEP_TECHNICAL_ARCHITECTURE.md](docs/
 
 Public application: https://reversepath-vibesprint.vercel.app. Verified fallback: https://reversepath-vibesprint.vercel.app/demo.
 
-The hosted submission currently runs the prepared offline example, clearly labelled **no live AI**, with completion in browser storage. Local live email authentication, Supabase persistence and RouterPlus generation are now tested against the dedicated ReversePath project. The full live Golden Path passed on `gpt-6-luna`; Production environment configuration and hosted live verification remain pending.
+The current public release remains the prepared offline example, clearly labelled **no live AI**. A hardened live release is staged on the existing Vercel project: its real RouterPlus Golden Path and Career, Startup, and Learning planning scenarios passed against Supabase. Public email signup is blocked by Supabase HTTP 429 (`over_email_send_rate_limit`), so the staged release has not been promoted and production readiness is **not complete**.
 
-See [setup](docs/VIBE_SPRINT_SETUP.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), and [final submission report](docs/VIBE_SPRINT_FINAL_REPORT.md) for configuration and actual test results. The sprint configuration uses RouterPlus through the existing `openai` adapter, OpenAI-only routes and zero retries. Secrets remain server-side; `/demo` always remains a prepared example.
+See [current readiness and release evidence](docs/REVERSEPATH_PRODUCTION_READINESS.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), and [setup](docs/VIBE_SPRINT_SETUP.md). October 13 verification: 50 unit/integration/database tests passed, 4 provider gates skipped; TypeScript, builds and dependency audit passed; final hosted Golden Path and three live goals passed. Action edits, graph persistence, version activation, check-ins and strategy selection now use owner-scoped database transactions. The demo remains available.
 
 ## Stack
 
@@ -18,7 +18,7 @@ See [setup](docs/VIBE_SPRINT_SETUP.md), [handoff](docs/VIBE_SPRINT_HANDOFF.md), 
 - Tailwind CSS and shadcn-style UI primitives
 - Supabase Auth, PostgreSQL, Storage, migrations, and Row Level Security
 - Server-side AI gateway using OpenAI-compatible structured object generation
-- Free-first AI routing: Groq for fast work, Gemini for planning, OpenRouter fallback, optional OpenAI fallback
+- Configurable provider gateway; the verified sprint deployment uses RouterPlus / `gpt-6-luna`, OpenAI-only routes and zero retries
 - Vitest for unit/database/integration tests
 - Playwright for browser E2E tests
 
@@ -129,7 +129,7 @@ Normal tests use deterministic mock AI and do not require paid provider calls.
 - Unit: AI contracts, provider router, orchestrator mock behavior, frontier, graph validation, plan diff
 - Integration: deterministic Golden Path lifecycle with mock AI and real domain logic
 - Database static validation: migrations, RLS declarations, ownership triggers, activation RPC
-- Browser E2E: public shell and unauthenticated protected-route guard
+- Browser E2E: public shell, auth feedback, demo desktop/mobile, real confirmation callback, owner isolation, full authenticated Golden Path and three opt-in planning scenarios
 
 Optional live checks:
 

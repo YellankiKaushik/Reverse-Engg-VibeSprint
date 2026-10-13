@@ -19,7 +19,7 @@ test("real signup, confirmation callback, login and logout work", async ({ page,
         global: { fetch: createSupabaseTestFetch(key) },
         auth: { persistSession: false },
     });
-    const email = `reversepath-signup-${crypto.randomUUID()}@example.test`;
+    const email = `reversepath-signup-${crypto.randomUUID()}@example.com`;
     const password = "ReversePath-signup-test-12345";
     let userId: string | undefined;
     try {
@@ -27,7 +27,19 @@ test("real signup, confirmation callback, login and logout work", async ({ page,
         await page.getByRole("button", { name: "No account yet? Create one" }).click();
         await page.getByLabel("Email").fill(email);
         await page.getByLabel("Password").fill(password);
+        const signupResponse = page.waitForResponse(
+            (response) =>
+                response.url().includes("/auth/v1/signup") &&
+                response.request().method() === "POST",
+        );
         await page.getByRole("button", { name: "Create account", exact: true }).click();
+        const response = await signupResponse;
+        if (!response.ok()) {
+            const body = await response.json();
+            throw new Error(
+                `Signup rejected: HTTP ${response.status()} ${String(body.code ?? body.error_code ?? "")} ${String(body.msg ?? body.message ?? "").replace(/\S+@\S+/g, "[test email]")}`,
+            );
+        }
         await expect(page.getByRole("status")).toContainText("Check your email", {
             timeout: 30_000,
         });

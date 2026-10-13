@@ -20,6 +20,10 @@
 
 ---
 
+## Current release evidence - October 13, 2026
+
+The original target design below is historical. The current implementation uses React/TanStack Start, Supabase and the existing RouterPlus gateway. Graph persistence, execution edits, activation, check-ins and strategy selection are transactional; eight migrations are applied to the dedicated ReversePath database. The hardened staged Production deployment passed the real Golden Path and three planning scenarios. Public promotion remains blocked by email signup rate limiting. [REVERSEPATH_PRODUCTION_READINESS.md](REVERSEPATH_PRODUCTION_READINESS.md) is authoritative for current architecture, tests, deployment state and limitations.
+
 ## Implementation Reconciliation Note
 
 As of 2026-09-03 this repository contains a TanStack Start/React/TypeScript implementation with Supabase migrations, server-side AI orchestration, structured AI schemas, authenticated server functions, plan graph persistence, executable-frontier logic, action/check-in/replan flows, deterministic mock AI for no-cost tests, provider-router coverage, integration-style Golden Path coverage, database/RLS migration validation, and Playwright browser guard coverage.
