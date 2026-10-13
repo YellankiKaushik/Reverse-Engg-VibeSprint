@@ -166,4 +166,4 @@ If Supabase CLI authentication is unavailable while bootstrapping the remote sch
 
 Email release blocker: custom SMTP remains disabled; email confirmation stays enabled. See [private SMTP and domain setup](docs/REVERSEPATH_EMAIL_SETUP.md) for Resend and a possible free Brevo alternative. Actual inbox receipt is required before promotion.
 
-Code-side acceptance is complete at `6541145`: persistent signup error guidance, 55 automated tests and 12 local browser checks passed. A release PR is being prepared without merging. Public release remains gated on user-managed SMTP and real inbox acceptance; the old staged candidate does not include this final auth patch.
+Code-side acceptance is complete at `6541145`: persistent signup error guidance, 55 automated tests and 12 local browser checks passed. The [release PR description](docs/REVERSEPATH_RELEASE_PR.md) is prepared; connector creation returned HTTP 403 and no merge occurred. Public release remains gated on user-managed SMTP and real inbox acceptance; the old staged candidate does not include this final auth patch.

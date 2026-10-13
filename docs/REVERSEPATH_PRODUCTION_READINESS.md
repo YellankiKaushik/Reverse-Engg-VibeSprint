@@ -48,7 +48,7 @@ The five local browser skips are three already-completed live AI scenarios, real
 
 **Awaiting the user:** provider activation/verification, any chosen domain/DNS, private SMTP credentials/settings and any necessary keys/environment configuration. Email confirmation remains enabled. No repeated setup requests or automatic email retries are scheduled.
 
-**Release actions after private setup:** build/stage the verified branch including `6541145`; the old staged deployment lacks this auth patch. Verify real confirmation receipt in an owned inbox and callback/session flow on that exact candidate. Once all gates pass, promote that candidate, run public authenticated workflow/persistence/isolation/mobile/demo acceptance, then merge the PR using preserved history and the repository's deployment process. A main merge may trigger production deployment, so the PR is held as draft and no merge/auto-merge is performed. A successful endpoint or admin-generated confirmation link alone does not satisfy inbox acceptance.
+**Release actions after private setup:** build/stage the verified branch including `6541145`; the old staged deployment lacks this auth patch. Verify real confirmation receipt in an owned inbox and callback/session flow on that exact candidate. Once all gates pass, promote that candidate, run public authenticated workflow/persistence/isolation/mobile/demo acceptance, then merge the PR using preserved history and the repository's deployment process. A main merge may trigger production deployment, so prepare the PR as draft and do not merge or enable auto-merge. A successful endpoint or admin-generated confirmation link alone does not satisfy inbox acceptance.
 
 ## Architecture actually running
 
@@ -179,3 +179,7 @@ Live browser gates are explicit: `RUN_E2E_GOLDEN`, `RUN_E2E_SCENARIOS`, and `RUN
 - Tests exercised Chromium and an installed Edge smoke; no Firefox/Safari coverage or formal load/availability certification is claimed.
 
 Future changes should retain the current stack, run deterministic tests before paid inference, add targeted fault/concurrency tests for any new multi-write operation, preserve `/demo`, and avoid rewriting published Git history or touching unrelated Supabase projects.
+
+## GitHub release preparation
+
+The verified stabilization branch is pushed; application source is `6541145`. Reviewed the full diff against fetched `origin/main` and preserved history. PR creation through the GitHub connector returned HTTP 403 `Resource not accessible by integration`; no PR was opened and no merge occurred. The complete [draft PR description and comparison link](REVERSEPATH_RELEASE_PR.md) are ready for review. This external connector permission does not affect code acceptance.
