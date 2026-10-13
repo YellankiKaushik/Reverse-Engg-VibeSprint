@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("unconfigured authentication shows a useful message without crashing", async ({ page }) => {
     test.skip(

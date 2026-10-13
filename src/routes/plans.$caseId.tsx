@@ -128,6 +128,8 @@ function PlanDetail() {
         queryFn: () =>
             fetchBundle({ data: viewVersionId ? { caseId, versionId: viewVersionId } : { caseId } }),
         enabled: !!user,
+        // Ownership and auth failures need immediate feedback, not repeated reads.
+        retry: false,
     });
 
     const invalidate = () => queryClient.invalidateQueries({ queryKey: ["case", caseId] });

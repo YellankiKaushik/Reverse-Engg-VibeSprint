@@ -116,10 +116,13 @@ export async function completeIdempotencyKey(
         .eq("user_id", userId)
         .eq("operation", operation)
         .eq("key", key);
-    if (error)
-        throw new Error(
+    if (error) {
+        const failure = new Error(
             "The result was saved, but its request receipt could not be recorded. Refresh before retrying.",
-        );
+        ) as Error & { preserveClaim: boolean };
+        failure.preserveClaim = true;
+        throw failure;
+    }
 }
 
 export async function releaseIdempotencyKey(userId: string, operation: string, key: string) {

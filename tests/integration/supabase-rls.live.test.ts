@@ -2,6 +2,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Database } from "@/integrations/supabase/types";
+import { persistProposal } from "@/lib/planner.server";
+import { mockPlanProposal } from "@/ai/mock-provider.server";
 import {
     createSupabaseTestFetch,
     hasSupabaseLiveTestCredentials,
@@ -266,16 +268,14 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         expect(milestone.error).toBeNull();
         expect(
             (
-                await userA
-                    .from("plan_edges")
-                    .insert({
-                        user_id: userAId,
-                        plan_version_id: ids.versionId,
-                        from_node_id: ids.nodeId,
-                        to_node_id: milestone.data!.id,
-                        edge_type: "REQUIRES",
-                        hard_dependency: true,
-                    })
+                await userA.from("plan_edges").insert({
+                    user_id: userAId,
+                    plan_version_id: ids.versionId,
+                    from_node_id: ids.nodeId,
+                    to_node_id: milestone.data!.id,
+                    edge_type: "REQUIRES",
+                    hard_dependency: true,
+                })
             ).error,
         ).toBeNull();
         expect(
@@ -336,6 +336,73 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
                 })
             ).error,
         ).toBeNull();
+    }, 30_000);
+
+    it("rolls back partial graph persistence and allocates concurrent version numbers", async () => {
+        const ids = await createUserAPlanGraph();
+        const proposal = mockPlanProposal({ rawText: "Build a portfolio in six months" });
+        const args = {
+            supabase: userA,
+            userId: userAId,
+            planId: ids.planId,
+            caseId: ids.caseId,
+            proposal,
+            scenario: "BALANCED" as const,
+            parentVersionId: ids.versionId,
+            versionNumber: 2,
+            modelAlias: "PRIMARY",
+            promptVersion: "v1",
+            activate: false,
+        };
+        // Failure after earlier graph rows were inserted must roll back everything.
+        const failed = await userA.rpc("persist_plan_graph", {
+            target_plan_id: ids.planId,
+            activate: false,
+            payload: {
+                version: { scenario: "BALANCED", confidence_reasons: [], generated_by: "AI" },
+                strategies: [{ name: "Temporary strategy" }],
+                plan_nodes: [{ node_type: "ACTION", title: null }],
+            },
+        });
+        expect(failed.error).not.toBeNull();
+        expect(
+            (await userA.from("plan_versions").select("id").eq("plan_id", ids.planId)).data,
+        ).toHaveLength(1);
+        expect(
+            (
+                await userA
+                    .from("strategies")
+                    .select("id")
+                    .eq("user_id", userAId)
+                    .eq("name", "Temporary strategy")
+            ).data,
+        ).toHaveLength(0);
+        const versions = await Promise.all([persistProposal(args), persistProposal(args)]);
+        expect(versions.map((v) => v.versionNumber).sort()).toEqual([2, 3]);
+        const activations = await Promise.all(
+            versions.map((v) =>
+                userA.rpc("activate_plan_version_for_user", {
+                    target_plan_id: ids.planId,
+                    target_version_id: v.versionId,
+                }),
+            ),
+        );
+        expect(activations.every((r) => !r.error)).toBe(true);
+        expect(
+            (
+                await userA
+                    .from("plan_versions")
+                    .select("id")
+                    .eq("plan_id", ids.planId)
+                    .eq("state", "ACTIVE")
+            ).data,
+        ).toHaveLength(1);
+        const denied = await userB.rpc("persist_plan_graph", {
+            target_plan_id: ids.planId,
+            payload: {},
+            activate: false,
+        });
+        expect(denied.error).not.toBeNull();
     }, 30_000);
 
     async function expectUserBDenied(

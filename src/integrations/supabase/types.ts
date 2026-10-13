@@ -830,6 +830,10 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            persist_plan_graph: {
+                Args: { target_plan_id: string; payload: Json; activate?: boolean };
+                Returns: Json;
+            };
             update_execution_node: {
                 Args: { target_node_id: string; patch: Json };
                 Returns: undefined;
