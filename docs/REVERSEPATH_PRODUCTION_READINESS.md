@@ -2,11 +2,12 @@
 
 ## Release decision
 
-**NOT production-ready: public email signup is blocked by Supabase's email service.** The hardened application is deployed and verified on a protected staged Production deployment. It has not been promoted to the public production domain. The previous public application and prepared `/demo` remain operational.
+**CODE COMPLETE — AWAITING USER SMTP CONFIGURATION.** Public production release remains incomplete. The hardened application is deployed and verified on a protected staged Production deployment. It has not been promoted to the public production domain. The previous public application and prepared `/demo` remain operational.
 
 - Repository: https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint
 - Development branch: `codex/production-stabilization`.
-- Application source commit: `5ee686d`; subsequent documentation/test-only commits do not change deployed application code.
+- Current verified application source: `6541145` (persistent signup error guidance).
+- Existing staged application source: `5ee686d`; this deployment does not contain the final auth error patch. It remains valid evidence for the unchanged planning/execution core.
 - Staged deployment: `dpl_C8eZXciWFDqKCm9UX3zWWMjSM5rN`.
 - Staged URL: https://reversepath-vibesprint-8bs5ovto2-kaushik-yellanki-project.vercel.app (Vercel Authentication protected).
 - Public URL: https://reversepath-vibesprint.vercel.app.
@@ -16,9 +17,38 @@
 
 The remaining external action is private custom SMTP setup followed by actual signup inbox verification. A read-only configuration snapshot confirmed custom SMTP disabled and email confirmation enabled. The user prefers Resend but owns no sending domain; a possible free temporary alternative is Brevo with a verified mailbox and provider-managed sender replacement, subject to activation and inbox tests. See [the exact provider, DNS and Supabase setup guide](REVERSEPATH_EMAIL_SETUP.md). No purchase is authorized or has been made.
 
-The earlier single cooldown follow-up remains scheduled for approximately **16:00 IST on October 13, 2026**. It had not run as of 15:18 IST. A quota reset cannot establish public-email readiness: Supabase's built-in sender is restricted to team recipients. Do not promote based on a successful signup endpoint or an admin-generated callback alone.
+The user now owns all external account activation, domain/DNS, SMTP, API key and environment configuration. The earlier email-retry heartbeat has been **paused** under the final code-only instruction. No signup email, provider configuration, purchase or deployment promotion was performed in this final code pass. Do not automatically retry or repeatedly ask for external setup.
 
 Independent continuation checks passed on the same application source: environment validation, TypeScript, lint (zero errors; six existing warnings), 50 automated tests (four provider gates skipped), production build and npm audit (zero vulnerabilities). Source/client scanning found zero secrets across 157 source files and 42 client assets. Fresh protected staged smoke passed eight tests with one optional gate skipped; public smoke passed four. No additional paid AI calls or application changes were made. The current main commit remains an ancestor of the stabilization branch; main integration is pending release acceptance.
+
+## Final code-only acceptance
+
+**Completed engineering:** reviewed the full stabilization diff against freshly fetched `origin/main`, including graph/execution/check-in/strategy transactions, owner isolation, request idempotency and recovery, output bounds, mobile layout, dependency fixes and test infrastructure. Preserved the existing stack and features. The only additional confirmed issue was raw, transient signup error feedback. Commit `6541145` adds persistent accessible form errors for email HTTP 429, restricted sender and delivery failures, with useful recovery instructions and no automatic resend. Email/password input remains available; switching auth mode clears stale feedback. No schema or external configuration changed.
+
+**Reproduction and fixes:** a controlled, intercepted HTTP 429 test failed on the previous staged code because the persistent alert did not exist. Final browser regressions pass for 429, restricted sender and SMTP failure. Initial local regressions exposed missing API-version/CORS exposure headers in the intercepted test response; corrected the fixture to model the installed Supabase client's error-code parsing. Those intermediate failures are not counted as final passes.
+
+**Tests actually passed in this final pass (October 13, 2026):**
+
+| Check | Final result |
+| --- | --- |
+| Deterministic unit/integration/DB suite with real RLS fixtures | **55 passed, 4 skipped**; includes five new auth error regressions; unrelated paid provider gates skipped |
+| Typecheck | **Passed** |
+| Lint | **Passed**; zero errors, six existing Fast Refresh warnings |
+| Environment validation | **Passed**; read-only validation of existing local configuration |
+| Node production build | **Passed** |
+| Vercel production build | **Passed** locally; no new deployment published |
+| Dependency audit | **Passed**; zero vulnerabilities |
+| Secret scan | **Passed**; 160 source files and 42 client assets, zero findings |
+| Latest code, local Node browser suite | **12 passed, 5 skipped**; mock AI, real Supabase; full Golden Path, graph persistence/refresh, execution/replan, callback/reauthentication, cross-user denial, demo/mobile and three intercepted signup failure regressions |
+| Existing protected staged browser checks | **8 passed, 1 skipped**; no SMTP delivery or paid AI, unchanged core callback/session/isolation/demo checks |
+
+The five local browser skips are three already-completed live AI scenarios, real SMTP signup and an unconfigured-auth check that does not apply to this configured build. Staged's one skip is the same unconfigured-auth check. **Zero paid AI calls and zero real signup emails in this final pass.** Historical RouterPlus live evidence below remains historical; the final local Golden Path used mock AI and real database transactions.
+
+**Remaining confirmed code defects:** none identified by the review and final acceptance checks. Existing operational limitations below remain documented; this is not a claim of unlimited scale, complete browser coverage or public email reliability.
+
+**Awaiting the user:** provider activation/verification, any chosen domain/DNS, private SMTP credentials/settings and any necessary keys/environment configuration. Email confirmation remains enabled. No repeated setup requests or automatic email retries are scheduled.
+
+**Release actions after private setup:** build/stage the verified branch including `6541145`; the old staged deployment lacks this auth patch. Verify real confirmation receipt in an owned inbox and callback/session flow on that exact candidate. Once all gates pass, promote that candidate, run public authenticated workflow/persistence/isolation/mobile/demo acceptance, then merge the PR using preserved history and the repository's deployment process. A main merge may trigger production deployment, so the PR is held as draft and no merge/auto-merge is performed. A successful endpoint or admin-generated confirmation link alone does not satisfy inbox acceptance.
 
 ## Architecture actually running
 
@@ -113,7 +143,7 @@ Security advisors now report only disabled leaked-password protection. Do not bu
 
 1. **Signup HTTP 429:** inspect Authentication email settings and provider limits. Supabase's built-in provider is restricted to two emails per hour; configurable higher delivery limits require custom SMTP or a Send Email hook. Its default service is not a production email solution. See [rate limits](https://supabase.com/docs/guides/auth/rate-limits) and [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp). Configure an existing provider privately; do not disable confirmation to make a test pass.
 2. **After SMTP is configured:** rerun `signup-confirmation.spec.ts` with `RUN_E2E_SIGNUP=true` on the staged URL. Use an owned test mailbox via configuration when verifying actual inbox delivery; reserved-domain automated tests verify endpoint behavior and callback only.
-3. **If staged signup, actual inbox delivery and all other release gates pass:** promote the existing verified Production deployment with `vercel promote dpl_C8eZXciWFDqKCm9UX3zWWMjSM5rN --scope kaushik-yellanki-project --yes`. Do not rebuild/promote a differently configured preview. Then run the full Golden Path, the signup test and `/demo` against `https://reversepath-vibesprint.vercel.app`, and update this report before claiming release completion.
+3. **If staged signup, actual inbox delivery and all other release gates pass:** promote the exact final verified Production candidate built from the current branch. The older `dpl_C8eZXciWFDqKCm9UX3zWWMjSM5rN` deployment does not contain the final auth patch and must not be treated as the final candidate. Then run the full Golden Path, the signup test and `/demo` against `https://reversepath-vibesprint.vercel.app`, and update this report before claiming release completion.
 4. **Protected staging:** use authenticated CLI access or an origin-scoped automation header/cookie. Do not disable protection or forward a bypass token to Supabase. The test fixture establishes a bypass cookie for cross-origin confirmation redirects. See [Vercel automation protection access](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation).
 5. **AI 401/402/404/429/timeouts:** inspect server-side configuration names, model availability, provider account status and bounded logs. Keep retries at zero while diagnosing. Do not repeatedly regenerate or substitute a mock response without displaying its provenance.
 6. **Duplicate/in-flight request:** wait for the current operation and refresh. A completed receipt replays. A receipt-recording failure retains the reservation; inspect the saved plan before retrying. An abandoned reservation after a process crash needs owner/operation/key-specific operator investigation, not bulk deletion.

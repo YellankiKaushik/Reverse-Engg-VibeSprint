@@ -55,3 +55,7 @@ Independent work is complete. Do not repeat the 18 paid calls or migrations just
 ## Email blocker continuation — October 13, 2026
 
 Custom SMTP remains disabled; confirmation remains enabled. The user prefers Resend but owns no domain and has not authorized any purchase. The domainless Brevo temporary sender-replacement route is an option subject to provider activation and actual inbox testing. Follow [REVERSEPATH_EMAIL_SETUP.md](REVERSEPATH_EMAIL_SETUP.md) for exact private setup. Independent checks again passed: 50 automated tests, eight staged smoke and four public smoke; no additional paid AI or app edits. Do not promote or integrate main until real email receipt and release acceptance pass.
+
+## Final code-only handoff
+
+CODE COMPLETE — AWAITING USER SMTP CONFIGURATION. Application source `6541145` adds persistent signup rate-limit/delivery guidance. Final checks: 55 automated passed/4 skipped; local mock-AI, real-Supabase browser suite 12 passed/5 skipped; unchanged staged suite 8 passed/1 skipped; typecheck/lint/Node and Vercel build/audit/secret scan passed. No confirmed remaining code defect. No real signup email or paid AI call in this pass. Email retry heartbeat paused. All external setup belongs to the user. Build a fresh staged candidate containing the final patch before real inbox acceptance; hold main merge and promotion until release gates pass.
