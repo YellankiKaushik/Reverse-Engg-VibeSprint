@@ -203,6 +203,141 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         };
     }
 
+    it("atomically completes, rolls back failed edits, and denies cross-user RPCs", async () => {
+        const ids = await createUserAPlanGraph();
+        const denied = await userB.rpc("update_execution_node", {
+            target_node_id: ids.nodeId,
+            patch: { status: "DONE" },
+        });
+        expect(denied.error).not.toBeNull();
+        const invalid = await userA.rpc("update_execution_node", {
+            target_node_id: ids.nodeId,
+            patch: { status: "DONE", note: "must roll back", title: null },
+        });
+        expect(invalid.error).not.toBeNull();
+        const unchanged = await userA
+            .from("actions")
+            .select("completed_at, result")
+            .eq("id", ids.actionId)
+            .single();
+        expect(unchanged.data).toEqual({ completed_at: null, result: null });
+        expect(
+            (await userA.from("plan_nodes").select("status").eq("id", ids.nodeId).single()).data
+                ?.status,
+        ).toBe("PENDING");
+        const done = await userA.rpc("update_execution_node", {
+            target_node_id: ids.nodeId,
+            patch: { status: "DONE", note: "verified" },
+        });
+        expect(done.error).toBeNull();
+        const saved = await userA
+            .from("actions")
+            .select("completed_at, result")
+            .eq("id", ids.actionId)
+            .single();
+        expect(saved.data?.completed_at).toBeTruthy();
+        expect(saved.data?.result).toEqual({ note: "verified" });
+        expect(
+            (await userA.from("plan_nodes").select("status").eq("id", ids.nodeId).single()).data
+                ?.status,
+        ).toBe("DONE");
+        await userA.rpc("update_execution_node", {
+            target_node_id: ids.nodeId,
+            patch: { status: "DONE" },
+        });
+        expect(
+            (await userA.from("actions").select("completed_at").eq("id", ids.actionId).single())
+                .data?.completed_at,
+        ).toBe(saved.data?.completed_at);
+    }, 30_000);
+
+    it("serializes concurrent edits and enforces milestone prerequisites", async () => {
+        const ids = await createUserAPlanGraph();
+        const milestone = await userA
+            .from("plan_nodes")
+            .insert({
+                user_id: userAId,
+                plan_version_id: ids.versionId,
+                node_type: "MILESTONE",
+                title: "Finish milestone",
+            })
+            .select("id")
+            .single();
+        expect(milestone.error).toBeNull();
+        expect(
+            (
+                await userA
+                    .from("plan_edges")
+                    .insert({
+                        user_id: userAId,
+                        plan_version_id: ids.versionId,
+                        from_node_id: ids.nodeId,
+                        to_node_id: milestone.data!.id,
+                        edge_type: "REQUIRES",
+                        hard_dependency: true,
+                    })
+            ).error,
+        ).toBeNull();
+        expect(
+            (
+                await userA.rpc("update_execution_node", {
+                    target_node_id: milestone.data!.id,
+                    patch: { status: "DONE" },
+                })
+            ).error?.message,
+        ).toMatch(/prerequisites/);
+        const edits = await Promise.all(
+            ["First edit", "Second edit"].map((title) =>
+                userA.rpc("update_execution_node", {
+                    target_node_id: ids.nodeId,
+                    patch: {
+                        title,
+                        description: title,
+                        completionCriteria: title,
+                        estimatedMinutes: 30,
+                    },
+                }),
+            ),
+        );
+        expect(edits.every((r) => !r.error)).toBe(true);
+        expect(
+            (await userA.from("actions").select("revision").eq("id", ids.actionId).single()).data
+                ?.revision,
+        ).toBe(3);
+        expect(
+            (
+                await userA.rpc("update_execution_node", {
+                    target_node_id: ids.nodeId,
+                    patch: { status: "DEFERRED" },
+                })
+            ).error,
+        ).toBeNull();
+        expect(
+            (
+                await userA.rpc("update_execution_node", {
+                    target_node_id: milestone.data!.id,
+                    patch: { status: "DONE" },
+                })
+            ).error,
+        ).not.toBeNull();
+        expect(
+            (
+                await userA.rpc("update_execution_node", {
+                    target_node_id: ids.nodeId,
+                    patch: { status: "DONE" },
+                })
+            ).error,
+        ).toBeNull();
+        expect(
+            (
+                await userA.rpc("update_execution_node", {
+                    target_node_id: milestone.data!.id,
+                    patch: { status: "DONE" },
+                })
+            ).error,
+        ).toBeNull();
+    }, 30_000);
+
     async function expectUserBDenied(
         table:
             | "intake_cases"
@@ -227,59 +362,51 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         expect(updateByB.data, `${table} update`).toEqual([]);
     }
 
-    it(
-        "prevents another authenticated user from reading or mutating private case and plan data",
-        async () => {
-            const ids = await createUserAPlanGraph();
+    it("prevents another authenticated user from reading or mutating private case and plan data", async () => {
+        const ids = await createUserAPlanGraph();
 
-            await expectUserBDenied("intake_cases", ids.caseId, { normalized_title: "tampered" });
-            await expectUserBDenied("plans", ids.planId, { status: "TAMPERED" });
-            await expectUserBDenied("plan_versions", ids.versionId, { summary: "tampered" });
-            await expectUserBDenied("strategies", ids.strategyId, { summary: "tampered" });
-            await expectUserBDenied("plan_nodes", ids.nodeId, { title: "tampered" });
-            await expectUserBDenied("actions", ids.actionId, { completion_criteria: "tampered" });
-            await expectUserBDenied("assumptions", ids.assumptionId, { statement: "tampered" });
-            await expectUserBDenied("risks", ids.riskId, { statement: "tampered" });
-            await expectUserBDenied("check_ins", ids.checkInId, { note: "tampered" });
-            await expectUserBDenied("plan_changes", ids.changeId, { after_summary: "tampered" });
+        await expectUserBDenied("intake_cases", ids.caseId, { normalized_title: "tampered" });
+        await expectUserBDenied("plans", ids.planId, { status: "TAMPERED" });
+        await expectUserBDenied("plan_versions", ids.versionId, { summary: "tampered" });
+        await expectUserBDenied("strategies", ids.strategyId, { summary: "tampered" });
+        await expectUserBDenied("plan_nodes", ids.nodeId, { title: "tampered" });
+        await expectUserBDenied("actions", ids.actionId, { completion_criteria: "tampered" });
+        await expectUserBDenied("assumptions", ids.assumptionId, { statement: "tampered" });
+        await expectUserBDenied("risks", ids.riskId, { statement: "tampered" });
+        await expectUserBDenied("check_ins", ids.checkInId, { note: "tampered" });
+        await expectUserBDenied("plan_changes", ids.changeId, { after_summary: "tampered" });
 
-            const readableByA = await userA
-                .from("plan_nodes")
-                .select("id")
-                .eq("id", ids.nodeId)
-                .single();
-            expect(readableByA.error).toBeNull();
-            expect(readableByA.data?.id).toBe(ids.nodeId);
-        },
-        30_000,
-    );
+        const readableByA = await userA
+            .from("plan_nodes")
+            .select("id")
+            .eq("id", ids.nodeId)
+            .single();
+        expect(readableByA.error).toBeNull();
+        expect(readableByA.data?.id).toBe(ids.nodeId);
+    }, 30_000);
 
-    it(
-        "rejects child rows that point at another user's parent record",
-        async () => {
-            const created = await userA
-                .from("intake_cases")
-                .insert({
-                    user_id: userAId,
-                    raw_text: `${runId}: I want to test ownership triggers.`,
-                    normalized_title: `${runId}: Ownership trigger`,
-                    status: "READY_FOR_PLANNING",
-                })
-                .select("id")
-                .single();
-            expect(created.error).toBeNull();
+    it("rejects child rows that point at another user's parent record", async () => {
+        const created = await userA
+            .from("intake_cases")
+            .insert({
+                user_id: userAId,
+                raw_text: `${runId}: I want to test ownership triggers.`,
+                normalized_title: `${runId}: Ownership trigger`,
+                status: "READY_FOR_PLANNING",
+            })
+            .select("id")
+            .single();
+        expect(created.error).toBeNull();
 
-            const crossInsert = await userB.from("case_context_facts").insert({
-                user_id: userBId,
-                case_id: created.data!.id,
-                category: "FACT",
-                key: "malicious",
-                value: { answer: "cross-user insert" },
-                source: "TEST",
-            });
+        const crossInsert = await userB.from("case_context_facts").insert({
+            user_id: userBId,
+            case_id: created.data!.id,
+            category: "FACT",
+            key: "malicious",
+            value: { answer: "cross-user insert" },
+            source: "TEST",
+        });
 
-            expect(crossInsert.error?.message).toMatch(/ownership violation|row-level security/i);
-        },
-        30_000,
-    );
+        expect(crossInsert.error?.message).toMatch(/ownership violation|row-level security/i);
+    }, 30_000);
 });

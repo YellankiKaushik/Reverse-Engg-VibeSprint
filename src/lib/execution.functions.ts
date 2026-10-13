@@ -45,34 +45,16 @@ export const editAction = createServerFn({ method: "POST" })
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
 
-        const { error } = await supabase
-            .from("plan_nodes")
-            .update({ title: data.title, description: data.description })
-            .eq("id", data.nodeId)
-            .eq("user_id", userId);
-        if (error) throw new Error(error.message);
-
-        const existing = await supabase
-            .from("actions")
-            .select("revision")
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (existing.error)
-            throw new Error(`Action details could not be loaded: ${existing.error.message}`);
-        if (!existing.data) throw new Error("That action could not be found.");
-
-        const actionEdit = await supabase
-            .from("actions")
-            .update({
-                completion_criteria: data.completionCriteria,
-                estimated_minutes: data.estimatedMinutes,
-                revision: (existing.data?.revision ?? 1) + 1,
-            })
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId);
-        if (actionEdit.error)
-            throw new Error(`Action details could not be saved: ${actionEdit.error.message}`);
+        const { error } = await supabase.rpc("update_execution_node", {
+            target_node_id: data.nodeId,
+            patch: {
+                title: data.title,
+                description: data.description,
+                completionCriteria: data.completionCriteria,
+                estimatedMinutes: data.estimatedMinutes,
+            },
+        });
+        if (error) throw new Error(`Action details could not be saved: ${error.message}`);
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({
