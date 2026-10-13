@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { computeFrontier, progressOf } from "@/domain/frontier";
+import { computeFrontier, progressOf, executionNodesForStrategy } from "@/domain/frontier";
 import type { GraphEdge, GraphNode, NodeType } from "@/domain/types";
 import { NODE_TYPE_LABEL } from "@/domain/types";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,7 +43,8 @@ export const Route = createFileRoute("/plans/$caseId")({
             { property: "og:title", content: "Plan detail — ReversePath" },
             {
                 property: "og:description",
-                content: "Track the frontier, bottleneck and version history of a reverse-engineered plan.",
+                content:
+                    "Track the frontier, bottleneck and version history of a reverse-engineered plan.",
             },
         ],
     }),
@@ -100,11 +101,13 @@ function PlanDetail() {
         successCriteria: "",
         timeHorizon: "",
     });
-    const [newFact, setNewFact] = useState<{ category: FactCategory; key: string; answer: string }>({
-        category: "FACT",
-        key: "",
-        answer: "",
-    });
+    const [newFact, setNewFact] = useState<{ category: FactCategory; key: string; answer: string }>(
+        {
+            category: "FACT",
+            key: "",
+            answer: "",
+        },
+    );
     const [changedFact, setChangedFact] = useState<{
         category: FactCategory;
         key: string;
@@ -126,7 +129,9 @@ function PlanDetail() {
     const bundle = useQuery({
         queryKey: ["case", caseId, user?.id, viewVersionId],
         queryFn: () =>
-            fetchBundle({ data: viewVersionId ? { caseId, versionId: viewVersionId } : { caseId } }),
+            fetchBundle({
+                data: viewVersionId ? { caseId, versionId: viewVersionId } : { caseId },
+            }),
         enabled: !!user,
         // Ownership and auth failures need immediate feedback, not repeated reads.
         retry: false,
@@ -135,6 +140,7 @@ function PlanDetail() {
     const invalidate = () => queryClient.invalidateQueries({ queryKey: ["case", caseId] });
 
     async function guarded(label: string, fn: () => Promise<unknown>) {
+        if (busy) return;
         setBusy(true);
         try {
             await fn();
@@ -168,20 +174,29 @@ function PlanDetail() {
     const nodes = useMemo(() => (plan?.nodes ?? []) as unknown as GraphNode[], [plan?.nodes]);
     const edges = useMemo(() => (plan?.edges ?? []) as unknown as GraphEdge[], [plan?.edges]);
 
-    const frontier = useMemo(() => computeFrontier(nodes, edges), [nodes, edges]);
+    const executionNodes = useMemo(
+        () =>
+            executionNodesForStrategy(
+                nodes,
+                edges,
+                plan?.strategies.find((strategy) => strategy.selected)?.id ?? null,
+            ),
+        [nodes, edges, plan?.strategies],
+    );
+    const frontier = useMemo(() => computeFrontier(executionNodes, edges), [executionNodes, edges]);
     const milestoneFrontier = useMemo(
         () =>
             computeFrontier(
-                nodes.map((node) =>
+                executionNodes.map((node) =>
                     node.node_type === "MILESTONE"
                         ? { ...node, node_type: "ACTION" as const }
                         : node,
                 ),
                 edges,
             ),
-        [nodes, edges],
+        [executionNodes, edges],
     );
-    const progress = useMemo(() => progressOf(nodes), [nodes]);
+    const progress = useMemo(() => progressOf(executionNodes), [executionNodes]);
     const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
     const prereqsOf = useMemo(() => {
         const map = new Map<string, GraphNode[]>();
@@ -227,7 +242,9 @@ function PlanDetail() {
             <AppShell>
                 <div className="panel p-6">
                     <h1 className="text-lg font-medium">This plan couldn't be loaded</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">{(bundle.error as Error).message}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {(bundle.error as Error).message}
+                    </p>
                     <Button className="mt-4" variant="outline" asChild>
                         <Link to="/">Back to plans</Link>
                     </Button>
@@ -249,8 +266,6 @@ function PlanDetail() {
             ? (generation as { provider?: string; model?: string | null })
             : null;
 
-
-
     return (
         <AppShell>
             <div className="space-y-8">
@@ -265,14 +280,19 @@ function PlanDetail() {
                             <Input
                                 value={objectiveDraft.title}
                                 placeholder="Objective title"
-                                onChange={(e) => setObjectiveDraft((d) => ({ ...d, title: e.target.value }))}
+                                onChange={(e) =>
+                                    setObjectiveDraft((d) => ({ ...d, title: e.target.value }))
+                                }
                             />
                             <Textarea
                                 rows={3}
                                 value={objectiveDraft.desiredOutcome}
                                 placeholder="Desired outcome"
                                 onChange={(e) =>
-                                    setObjectiveDraft((d) => ({ ...d, desiredOutcome: e.target.value }))
+                                    setObjectiveDraft((d) => ({
+                                        ...d,
+                                        desiredOutcome: e.target.value,
+                                    }))
                                 }
                             />
                             <Textarea
@@ -280,13 +300,21 @@ function PlanDetail() {
                                 value={objectiveDraft.successCriteria}
                                 placeholder="Success criteria, one per line"
                                 onChange={(e) =>
-                                    setObjectiveDraft((d) => ({ ...d, successCriteria: e.target.value }))
+                                    setObjectiveDraft((d) => ({
+                                        ...d,
+                                        successCriteria: e.target.value,
+                                    }))
                                 }
                             />
                             <Input
                                 value={objectiveDraft.timeHorizon}
                                 placeholder="Time horizon (optional)"
-                                onChange={(e) => setObjectiveDraft((d) => ({ ...d, timeHorizon: e.target.value }))}
+                                onChange={(e) =>
+                                    setObjectiveDraft((d) => ({
+                                        ...d,
+                                        timeHorizon: e.target.value,
+                                    }))
+                                }
                             />
                             <div className="flex gap-2">
                                 <Button
@@ -298,13 +326,15 @@ function PlanDetail() {
                                                 data: {
                                                     caseId,
                                                     title: objectiveDraft.title.trim(),
-                                                    desiredOutcome: objectiveDraft.desiredOutcome.trim(),
+                                                    desiredOutcome:
+                                                        objectiveDraft.desiredOutcome.trim(),
                                                     successCriteria: objectiveDraft.successCriteria
                                                         .split("\n")
                                                         .map((s) => s.trim())
                                                         .filter(Boolean)
                                                         .slice(0, 8),
-                                                    timeHorizon: objectiveDraft.timeHorizon.trim() || null,
+                                                    timeHorizon:
+                                                        objectiveDraft.timeHorizon.trim() || null,
                                                 },
                                             });
                                             setEditingObjective(false);
@@ -313,7 +343,11 @@ function PlanDetail() {
                                 >
                                     Save objective
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setEditingObjective(false)}>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setEditingObjective(false)}
+                                >
                                     Cancel
                                 </Button>
                             </div>
@@ -366,8 +400,8 @@ function PlanDetail() {
                         <p className="label-mono">Policy</p>
                         {intake.status === "REJECTED" ? (
                             <p className="mt-2 text-sm">
-                                ReversePath will not decompose this objective. Reframe it into a safe adjacent goal,
-                                or consult a qualified professional.
+                                ReversePath will not decompose this objective. Reframe it into a
+                                safe adjacent goal, or consult a qualified professional.
                             </p>
                         ) : null}
                         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
@@ -384,7 +418,10 @@ function PlanDetail() {
                         <div className="mt-4 space-y-4">
                             {questions.map((question) => (
                                 <div key={question.key} className="space-y-1.5">
-                                    <label className="block text-sm font-medium" htmlFor={question.key}>
+                                    <label
+                                        className="block text-sm font-medium"
+                                        htmlFor={question.key}
+                                    >
                                         {question.question}
                                     </label>
                                     <p className="text-xs text-muted-foreground">{question.why}</p>
@@ -392,7 +429,10 @@ function PlanDetail() {
                                         id={question.key}
                                         value={answers[question.key] ?? ""}
                                         onChange={(e) =>
-                                            setAnswers((prev) => ({ ...prev, [question.key]: e.target.value }))
+                                            setAnswers((prev) => ({
+                                                ...prev,
+                                                [question.key]: e.target.value,
+                                            }))
                                         }
                                     />
                                 </div>
@@ -438,9 +478,14 @@ function PlanDetail() {
                     <p className="label-mono">Context the planner may treat as true</p>
                     <ul className="mt-3 space-y-2 text-sm">
                         {data.facts.map((fact) => (
-                            <li key={fact.id} className="flex flex-wrap items-start justify-between gap-2">
+                            <li
+                                key={fact.id}
+                                className="flex flex-wrap items-start justify-between gap-2"
+                            >
                                 <span className="text-muted-foreground">
-                                    <span className="font-mono text-[11px] text-foreground">{fact.category}</span>{" "}
+                                    <span className="font-mono text-[11px] text-foreground">
+                                        {fact.category}
+                                    </span>{" "}
                                     {fact.key}: {fact.answer}
                                 </span>
                                 <Button
@@ -448,7 +493,9 @@ function PlanDetail() {
                                     variant="ghost"
                                     disabled={busy}
                                     onClick={() =>
-                                        guarded("Fact removed.", () => runDeleteFact({ data: { factId: fact.id } }))
+                                        guarded("Fact removed.", () =>
+                                            runDeleteFact({ data: { factId: fact.id } }),
+                                        )
                                     }
                                 >
                                     Remove
@@ -457,7 +504,8 @@ function PlanDetail() {
                         ))}
                         {data.facts.length === 0 ? (
                             <li className="text-muted-foreground">
-                                No context recorded yet — anything you add here constrains the next plan.
+                                No context recorded yet — anything you add here constrains the next
+                                plan.
                             </li>
                         ) : null}
                     </ul>
@@ -466,7 +514,10 @@ function PlanDetail() {
                             className="h-9 rounded border border-border bg-secondary/40 px-2 font-mono text-xs"
                             value={newFact.category}
                             onChange={(e) =>
-                                setNewFact((f) => ({ ...f, category: e.target.value as FactCategory }))
+                                setNewFact((f) => ({
+                                    ...f,
+                                    category: e.target.value as FactCategory,
+                                }))
                             }
                         >
                             {FACT_CATEGORIES.map((category) => (
@@ -516,8 +567,8 @@ function PlanDetail() {
                         </p>
                         <h2 className="text-lg font-medium">Ready to reverse-engineer</h2>
                         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                            ReversePath will map requirements and gaps backwards from your outcome, compare
-                            strategies, and rank the first action.
+                            ReversePath will map requirements and gaps backwards from your outcome,
+                            compare strategies, and rank the first action.
                         </p>
                         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                             {SCENARIOS.map((option) => (
@@ -550,8 +601,9 @@ function PlanDetail() {
                             <section className="panel border-primary/40 p-4">
                                 <p className="label-mono">Reviewing a proposed version</p>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    Version {plan.version?.version_number} is a candidate. Accept it to make it your
-                                    active plan, or reject it to keep the current one.
+                                    Version {plan.version?.version_number} is a candidate. Accept it
+                                    to make it your active plan, or reject it to keep the current
+                                    one.
                                 </p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     <Button
@@ -560,7 +612,10 @@ function PlanDetail() {
                                         onClick={() =>
                                             guarded("Candidate accepted.", async () => {
                                                 await runActivate({
-                                                    data: { planId: plan.id, versionId: plan.version!.id },
+                                                    data: {
+                                                        planId: plan.id,
+                                                        versionId: plan.version!.id,
+                                                    },
                                                 });
                                                 setViewVersionId(null);
                                             })
@@ -574,7 +629,9 @@ function PlanDetail() {
                                         disabled={busy}
                                         onClick={() =>
                                             guarded("Candidate rejected.", async () => {
-                                                await runReject({ data: { versionId: plan.version!.id } });
+                                                await runReject({
+                                                    data: { versionId: plan.version!.id },
+                                                });
                                                 setViewVersionId(null);
                                             })
                                         }
@@ -586,8 +643,14 @@ function PlanDetail() {
                         ) : null}
 
                         <section className="grid gap-4 sm:grid-cols-3">
-                            <Metric label="Feasibility" value={`${plan.version?.feasibility_score ?? "—"}`} />
-                            <Metric label="Confidence" value={`${plan.version?.confidence_score ?? "—"}`} />
+                            <Metric
+                                label="Feasibility"
+                                value={`${plan.version?.feasibility_score ?? "—"}`}
+                            />
+                            <Metric
+                                label="Confidence"
+                                value={`${plan.version?.confidence_score ?? "—"}`}
+                            />
                             <Metric
                                 label="Progress"
                                 value={`${progress.percent}% · ${progress.done}/${progress.total}`}
@@ -595,7 +658,7 @@ function PlanDetail() {
                         </section>
 
                         {Array.isArray(plan.version?.confidence_reasons) &&
-                            (plan.version.confidence_reasons as string[]).length > 0 ? (
+                        (plan.version.confidence_reasons as string[]).length > 0 ? (
                             <section className="panel p-5">
                                 <p className="label-mono">Why this confidence</p>
                                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
@@ -606,7 +669,7 @@ function PlanDetail() {
                             </section>
                         ) : null}
 
-                        {nodes.some((node) => node.node_type === "MILESTONE") ? (
+                        {executionNodes.some((node) => node.node_type === "MILESTONE") ? (
                             <section className="panel p-5">
                                 <h2 className="font-medium">Milestone reviews</h2>
                                 <p className="mt-1 text-xs text-muted-foreground">
@@ -614,7 +677,7 @@ function PlanDetail() {
                                     criteria are met.
                                 </p>
                                 <ul className="mt-3 space-y-3">
-                                    {nodes
+                                    {executionNodes
                                         .filter((node) => node.node_type === "MILESTONE")
                                         .map((node) => {
                                             const ready = milestoneFrontier.ready.some(
@@ -672,7 +735,9 @@ function PlanDetail() {
                         {plan.version?.summary ? (
                             <section className="panel p-5">
                                 <p className="label-mono">Read of the situation</p>
-                                <p className="mt-2 text-sm text-muted-foreground">{plan.version.summary}</p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {plan.version.summary}
+                                </p>
                             </section>
                         ) : null}
 
@@ -682,7 +747,8 @@ function PlanDetail() {
                                 {bottleneck?.title ?? "No single bottleneck identified"}
                             </p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                {plan.version?.bottleneck_reason ?? "Evidence was insufficient to name one."}
+                                {plan.version?.bottleneck_reason ??
+                                    "Evidence was insufficient to name one."}
                             </p>
                         </section>
 
@@ -711,21 +777,30 @@ function PlanDetail() {
                                                     <Input
                                                         value={actionDraft.title}
                                                         onChange={(e) =>
-                                                            setActionDraft((d) => ({ ...d, title: e.target.value }))
+                                                            setActionDraft((d) => ({
+                                                                ...d,
+                                                                title: e.target.value,
+                                                            }))
                                                         }
                                                     />
                                                     <Textarea
                                                         rows={2}
                                                         value={actionDraft.description}
                                                         onChange={(e) =>
-                                                            setActionDraft((d) => ({ ...d, description: e.target.value }))
+                                                            setActionDraft((d) => ({
+                                                                ...d,
+                                                                description: e.target.value,
+                                                            }))
                                                         }
                                                     />
                                                     <Input
                                                         placeholder="Completion criteria"
                                                         value={actionDraft.completionCriteria}
                                                         onChange={(e) =>
-                                                            setActionDraft((d) => ({ ...d, completionCriteria: e.target.value }))
+                                                            setActionDraft((d) => ({
+                                                                ...d,
+                                                                completionCriteria: e.target.value,
+                                                            }))
                                                         }
                                                     />
                                                     <Input
@@ -733,7 +808,10 @@ function PlanDetail() {
                                                         inputMode="numeric"
                                                         value={actionDraft.estimatedMinutes}
                                                         onChange={(e) =>
-                                                            setActionDraft((d) => ({ ...d, estimatedMinutes: e.target.value }))
+                                                            setActionDraft((d) => ({
+                                                                ...d,
+                                                                estimatedMinutes: e.target.value,
+                                                            }))
                                                         }
                                                     />
                                                     <div className="flex gap-2">
@@ -741,19 +819,34 @@ function PlanDetail() {
                                                             size="sm"
                                                             disabled={busy}
                                                             onClick={() =>
-                                                                guarded("Action updated.", async () => {
-                                                                    const minutes = Number.parseInt(actionDraft.estimatedMinutes, 10);
-                                                                    await runEditAction({
-                                                                        data: {
-                                                                            nodeId: candidate.node.id,
-                                                                            title: actionDraft.title.trim(),
-                                                                            description: actionDraft.description.trim(),
-                                                                            completionCriteria: actionDraft.completionCriteria.trim(),
-                                                                            estimatedMinutes: Number.isFinite(minutes) ? minutes : null,
-                                                                        },
-                                                                    });
-                                                                    setEditingAction(null);
-                                                                })
+                                                                guarded(
+                                                                    "Action updated.",
+                                                                    async () => {
+                                                                        const minutes =
+                                                                            Number.parseInt(
+                                                                                actionDraft.estimatedMinutes,
+                                                                                10,
+                                                                            );
+                                                                        await runEditAction({
+                                                                            data: {
+                                                                                nodeId: candidate
+                                                                                    .node.id,
+                                                                                title: actionDraft.title.trim(),
+                                                                                description:
+                                                                                    actionDraft.description.trim(),
+                                                                                completionCriteria:
+                                                                                    actionDraft.completionCriteria.trim(),
+                                                                                estimatedMinutes:
+                                                                                    Number.isFinite(
+                                                                                        minutes,
+                                                                                    )
+                                                                                        ? minutes
+                                                                                        : null,
+                                                                            },
+                                                                        });
+                                                                        setEditingAction(null);
+                                                                    },
+                                                                )
                                                             }
                                                         >
                                                             Save
@@ -769,7 +862,9 @@ function PlanDetail() {
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <p className="mt-2 font-medium">{candidate.node.title}</p>
+                                                    <p className="mt-2 font-medium">
+                                                        {candidate.node.title}
+                                                    </p>
                                                     {candidate.node.description ? (
                                                         <p className="mt-1 text-sm text-muted-foreground">
                                                             {candidate.node.description}
@@ -788,22 +883,38 @@ function PlanDetail() {
                                                     </p>
                                                     <div className="mt-3 flex flex-wrap gap-2">
                                                         {(
-                                                            ["DONE", "IN_PROGRESS", "BLOCKED", "SKIPPED", "DEFERRED"] as const
+                                                            [
+                                                                "DONE",
+                                                                "IN_PROGRESS",
+                                                                "BLOCKED",
+                                                                "SKIPPED",
+                                                                "DEFERRED",
+                                                            ] as const
                                                         ).map((status) => (
                                                             <Button
                                                                 key={status}
                                                                 size="sm"
-                                                                variant={status === "DONE" ? "default" : "outline"}
+                                                                variant={
+                                                                    status === "DONE"
+                                                                        ? "default"
+                                                                        : "outline"
+                                                                }
                                                                 disabled={busy}
                                                                 onClick={() =>
                                                                     guarded("", () =>
                                                                         runUpdateAction({
-                                                                            data: { nodeId: candidate.node.id, status },
+                                                                            data: {
+                                                                                nodeId: candidate
+                                                                                    .node.id,
+                                                                                status,
+                                                                            },
                                                                         }),
                                                                     )
                                                                 }
                                                             >
-                                                                {status.replace("_", " ").toLowerCase()}
+                                                                {status
+                                                                    .replace("_", " ")
+                                                                    .toLowerCase()}
                                                             </Button>
                                                         ))}
                                                         <Button
@@ -812,11 +923,18 @@ function PlanDetail() {
                                                             onClick={() => {
                                                                 setActionDraft({
                                                                     title: candidate.node.title,
-                                                                    description: candidate.node.description ?? "",
-                                                                    completionCriteria: action?.completion_criteria ?? "",
-                                                                    estimatedMinutes: action?.estimated_minutes
-                                                                        ? String(action.estimated_minutes)
-                                                                        : "",
+                                                                    description:
+                                                                        candidate.node
+                                                                            .description ?? "",
+                                                                    completionCriteria:
+                                                                        action?.completion_criteria ??
+                                                                        "",
+                                                                    estimatedMinutes:
+                                                                        action?.estimated_minutes
+                                                                            ? String(
+                                                                                  action.estimated_minutes,
+                                                                              )
+                                                                            : "",
                                                                 });
                                                                 setEditingAction(candidate.node.id);
                                                             }}
@@ -831,8 +949,8 @@ function PlanDetail() {
                                 })}
                                 {frontier.ready.length === 0 ? (
                                     <li className="panel p-4 text-sm text-muted-foreground">
-                                        Nothing is unblocked right now — clear a blocked item below or check in to
-                                        replan.
+                                        Nothing is unblocked right now — clear a blocked item below
+                                        or check in to replan.
                                     </li>
                                 ) : null}
                             </ul>
@@ -847,7 +965,9 @@ function PlanDetail() {
                                             <p className="font-medium">{candidate.node.title}</p>
                                             <p className="mt-1 text-xs text-muted-foreground">
                                                 Waiting on:{" "}
-                                                {candidate.blockedBy.map((b) => b.title).join(", ") || "a blocked status"}
+                                                {candidate.blockedBy
+                                                    .map((b) => b.title)
+                                                    .join(", ") || "a blocked status"}
                                             </p>
                                             <Button
                                                 className="mt-2"
@@ -857,7 +977,10 @@ function PlanDetail() {
                                                 onClick={() =>
                                                     guarded("", () =>
                                                         runUpdateAction({
-                                                            data: { nodeId: candidate.node.id, status: "PENDING" },
+                                                            data: {
+                                                                nodeId: candidate.node.id,
+                                                                status: "PENDING",
+                                                            },
                                                         }),
                                                     )
                                                 }
@@ -871,10 +994,14 @@ function PlanDetail() {
                         ) : null}
 
                         <section>
-                            <p className="label-mono">Reverse map · requirements, gaps and dependencies</p>
+                            <p className="label-mono">
+                                Reverse map · requirements, gaps and dependencies
+                            </p>
                             <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                 {MAP_GROUPS.map((group) => {
-                                    const groupNodes = nodes.filter((n) => group.types.includes(n.node_type));
+                                    const groupNodes = nodes.filter((n) =>
+                                        group.types.includes(n.node_type),
+                                    );
                                     if (groupNodes.length === 0) return null;
                                     return (
                                         <article key={group.label} className="panel p-4">
@@ -884,13 +1011,18 @@ function PlanDetail() {
                                                     const prereqs = prereqsOf.get(node.id) ?? [];
                                                     return (
                                                         <li key={node.id}>
-                                                            <span className="font-medium">{node.title}</span>{" "}
+                                                            <span className="font-medium">
+                                                                {node.title}
+                                                            </span>{" "}
                                                             <span className="font-mono text-[11px] text-muted-foreground">
                                                                 {node.status}
                                                             </span>
                                                             {prereqs.length > 0 ? (
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    depends on: {prereqs.map((p) => p.title).join(", ")}
+                                                                    depends on:{" "}
+                                                                    {prereqs
+                                                                        .map((p) => p.title)
+                                                                        .join(", ")}
                                                                 </p>
                                                             ) : null}
                                                         </li>
@@ -913,15 +1045,23 @@ function PlanDetail() {
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <h3 className="font-medium">{strategy.name}</h3>
-                                            <span className="label-mono">{strategy.risk_level} risk</span>
+                                            <span className="label-mono">
+                                                {strategy.risk_level} risk
+                                            </span>
                                         </div>
-                                        <p className="mt-2 text-sm text-muted-foreground">{strategy.summary}</p>
-                                        <p className="mt-2 text-xs text-muted-foreground">{strategy.rationale}</p>
+                                        <p className="mt-2 text-sm text-muted-foreground">
+                                            {strategy.summary}
+                                        </p>
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            {strategy.rationale}
+                                        </p>
                                         {Array.isArray(strategy.tradeoffs) ? (
                                             <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                                                {(strategy.tradeoffs as string[]).map((tradeoff) => (
-                                                    <li key={tradeoff}>— {tradeoff}</li>
-                                                ))}
+                                                {(strategy.tradeoffs as string[]).map(
+                                                    (tradeoff) => (
+                                                        <li key={tradeoff}>— {tradeoff}</li>
+                                                    ),
+                                                )}
                                             </ul>
                                         ) : null}
                                         <Button
@@ -960,16 +1100,27 @@ function PlanDetail() {
                                                 {assumption.statement}
                                             </p>
                                             <div className="mt-1 flex flex-wrap gap-1.5">
-                                                {(["VALIDATED", "INVALIDATED", "ACCEPTED"] as const).map((status) => (
+                                                {(
+                                                    [
+                                                        "VALIDATED",
+                                                        "INVALIDATED",
+                                                        "ACCEPTED",
+                                                    ] as const
+                                                ).map((status) => (
                                                     <Button
                                                         key={status}
                                                         size="sm"
                                                         variant="outline"
-                                                        disabled={busy || assumption.status === status}
+                                                        disabled={
+                                                            busy || assumption.status === status
+                                                        }
                                                         onClick={() =>
                                                             guarded("", () =>
                                                                 runUpdateAssumption({
-                                                                    data: { assumptionId: assumption.id, status },
+                                                                    data: {
+                                                                        assumptionId: assumption.id,
+                                                                        status,
+                                                                    },
                                                                 }),
                                                             )
                                                         }
@@ -992,31 +1143,44 @@ function PlanDetail() {
                                         <li key={risk.id}>
                                             <p className="text-muted-foreground">
                                                 <span className="font-mono text-[11px] text-foreground">
-                                                    P{risk.probability_band[0]}/I{risk.impact_band[0]} · {risk.status}
+                                                    P{risk.probability_band[0]}/I
+                                                    {risk.impact_band[0]} · {risk.status}
                                                 </span>{" "}
                                                 {risk.statement}
                                                 {risk.mitigation ? (
-                                                    <span className="block text-xs">Mitigation: {risk.mitigation}</span>
+                                                    <span className="block text-xs">
+                                                        Mitigation: {risk.mitigation}
+                                                    </span>
                                                 ) : null}
                                             </p>
                                             <div className="mt-1 flex flex-wrap gap-1.5">
-                                                {(["MITIGATED", "ACCEPTED", "OCCURRED", "CLOSED"] as const).map(
-                                                    (status) => (
-                                                        <Button
-                                                            key={status}
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled={busy || risk.status === status}
-                                                            onClick={() =>
-                                                                guarded("", () =>
-                                                                    runUpdateRisk({ data: { riskId: risk.id, status } }),
-                                                                )
-                                                            }
-                                                        >
-                                                            {status.toLowerCase()}
-                                                        </Button>
-                                                    ),
-                                                )}
+                                                {(
+                                                    [
+                                                        "MITIGATED",
+                                                        "ACCEPTED",
+                                                        "OCCURRED",
+                                                        "CLOSED",
+                                                    ] as const
+                                                ).map((status) => (
+                                                    <Button
+                                                        key={status}
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={busy || risk.status === status}
+                                                        onClick={() =>
+                                                            guarded("", () =>
+                                                                runUpdateRisk({
+                                                                    data: {
+                                                                        riskId: risk.id,
+                                                                        status,
+                                                                    },
+                                                                }),
+                                                            )
+                                                        }
+                                                    >
+                                                        {status.toLowerCase()}
+                                                    </Button>
+                                                ))}
                                             </div>
                                         </li>
                                     ))}
@@ -1054,7 +1218,10 @@ function PlanDetail() {
                                     className="h-9 rounded border border-border bg-secondary/40 px-2 font-mono text-xs"
                                     value={changedFact.category}
                                     onChange={(e) =>
-                                        setChangedFact((f) => ({ ...f, category: e.target.value as FactCategory }))
+                                        setChangedFact((f) => ({
+                                            ...f,
+                                            category: e.target.value as FactCategory,
+                                        }))
                                     }
                                 >
                                     {FACT_CATEGORIES.map((category) => (
@@ -1066,12 +1233,16 @@ function PlanDetail() {
                                 <Input
                                     placeholder="What changed (label)"
                                     value={changedFact.key}
-                                    onChange={(e) => setChangedFact((f) => ({ ...f, key: e.target.value }))}
+                                    onChange={(e) =>
+                                        setChangedFact((f) => ({ ...f, key: e.target.value }))
+                                    }
                                 />
                                 <Input
                                     placeholder="New value"
                                     value={changedFact.value}
-                                    onChange={(e) => setChangedFact((f) => ({ ...f, value: e.target.value }))}
+                                    onChange={(e) =>
+                                        setChangedFact((f) => ({ ...f, value: e.target.value }))
+                                    }
                                 />
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
@@ -1083,12 +1254,12 @@ function PlanDetail() {
                                             const changed =
                                                 changedFact.key.trim() && changedFact.value.trim()
                                                     ? [
-                                                        {
-                                                            category: changedFact.category,
-                                                            key: changedFact.key.trim(),
-                                                            value: changedFact.value.trim(),
-                                                        },
-                                                    ]
+                                                          {
+                                                              category: changedFact.category,
+                                                              key: changedFact.key.trim(),
+                                                              value: changedFact.value.trim(),
+                                                          },
+                                                      ]
                                                     : [];
                                             const result = await runCheckIn({
                                                 data: {
@@ -1100,9 +1271,15 @@ function PlanDetail() {
                                             });
                                             setCheckInNote("");
                                             setRating(null);
-                                            setChangedFact({ category: "FACT", key: "", value: "" });
+                                            setChangedFact({
+                                                category: "FACT",
+                                                key: "",
+                                                value: "",
+                                            });
                                             if (result.suggestsReplan) {
-                                                toast.message("Circumstances shifted — a replan is worth proposing.");
+                                                toast.message(
+                                                    "Circumstances shifted — a replan is worth proposing.",
+                                                );
                                             }
                                         })
                                     }
@@ -1112,30 +1289,40 @@ function PlanDetail() {
                                 <Button
                                     disabled={busy}
                                     onClick={() =>
-                                        guarded("A revised version is ready to review.", async () => {
-                                            const changed =
-                                                changedFact.key.trim() && changedFact.value.trim()
-                                                    ? [
-                                                        {
-                                                            category: changedFact.category,
-                                                            key: changedFact.key.trim(),
-                                                            value: changedFact.value.trim(),
-                                                        },
-                                                    ]
-                                                    : [];
-                                            const result = await runReplan({
-                                                data: {
-                                                    planId: plan.id,
-                                                    reason: "CIRCUMSTANCE_CHANGED",
-                                                    note: checkInNote,
-                                                    changedFacts: changed,
-                                                    idempotencyKey: crypto.randomUUID(),
-                                                },
-                                            });
-                                            setChangedFact({ category: "FACT", key: "", value: "" });
-                                            const candidateId = (result as { versionId?: string }).versionId;
-                                            if (candidateId) setViewVersionId(candidateId);
-                                        })
+                                        guarded(
+                                            "A revised version is ready to review.",
+                                            async () => {
+                                                const changed =
+                                                    changedFact.key.trim() &&
+                                                    changedFact.value.trim()
+                                                        ? [
+                                                              {
+                                                                  category: changedFact.category,
+                                                                  key: changedFact.key.trim(),
+                                                                  value: changedFact.value.trim(),
+                                                              },
+                                                          ]
+                                                        : [];
+                                                const result = await runReplan({
+                                                    data: {
+                                                        planId: plan.id,
+                                                        reason: "CIRCUMSTANCE_CHANGED",
+                                                        note: checkInNote,
+                                                        changedFacts: changed,
+                                                        idempotencyKey: crypto.randomUUID(),
+                                                    },
+                                                });
+                                                setChangedFact({
+                                                    category: "FACT",
+                                                    key: "",
+                                                    value: "",
+                                                });
+                                                const candidateId = (
+                                                    result as { versionId?: string }
+                                                ).versionId;
+                                                if (candidateId) setViewVersionId(candidateId);
+                                            },
+                                        )
                                     }
                                 >
                                     Propose a revised plan
@@ -1148,7 +1335,9 @@ function PlanDetail() {
                                         <li key={entry.id}>
                                             <span className="font-mono text-foreground">
                                                 {new Date(entry.created_at).toLocaleDateString()}
-                                                {entry.progress_rating ? ` · ${entry.progress_rating}/5` : ""}
+                                                {entry.progress_rating
+                                                    ? ` · ${entry.progress_rating}/5`
+                                                    : ""}
                                             </span>{" "}
                                             {entry.note || "(no note)"}
                                         </li>
@@ -1166,7 +1355,8 @@ function PlanDetail() {
                                         className="panel flex flex-wrap items-center justify-between gap-3 p-3"
                                     >
                                         <span className="text-sm">
-                                            v{version.version_number} · {version.state} · {version.scenario}
+                                            v{version.version_number} · {version.state} ·{" "}
+                                            {version.scenario}
                                             {version.feasibility_score !== null
                                                 ? ` · feasibility ${version.feasibility_score}`
                                                 : ""}
@@ -1178,7 +1368,9 @@ function PlanDetail() {
                                                 disabled={plan.version?.id === version.id}
                                                 onClick={() => setViewVersionId(version.id)}
                                             >
-                                                {plan.version?.id === version.id ? "Viewing" : "View"}
+                                                {plan.version?.id === version.id
+                                                    ? "Viewing"
+                                                    : "View"}
                                             </Button>
                                             {version.state === "CANDIDATE" ? (
                                                 <>
@@ -1190,7 +1382,10 @@ function PlanDetail() {
                                                                 `Version ${version.version_number} is now active.`,
                                                                 async () => {
                                                                     await runActivate({
-                                                                        data: { planId: plan.id, versionId: version.id },
+                                                                        data: {
+                                                                            planId: plan.id,
+                                                                            versionId: version.id,
+                                                                        },
                                                                     });
                                                                     setViewVersionId(null);
                                                                 },
@@ -1204,10 +1399,17 @@ function PlanDetail() {
                                                         variant="outline"
                                                         disabled={busy}
                                                         onClick={() =>
-                                                            guarded("Candidate rejected.", async () => {
-                                                                await runReject({ data: { versionId: version.id } });
-                                                                setViewVersionId(null);
-                                                            })
+                                                            guarded(
+                                                                "Candidate rejected.",
+                                                                async () => {
+                                                                    await runReject({
+                                                                        data: {
+                                                                            versionId: version.id,
+                                                                        },
+                                                                    });
+                                                                    setViewVersionId(null);
+                                                                },
+                                                            )
                                                         }
                                                     >
                                                         Reject
@@ -1228,15 +1430,17 @@ function PlanDetail() {
                                                 <span className="font-mono text-foreground">
                                                     [{change.change_type}] {change.entity_type}
                                                 </span>{" "}
-                                                {change.before_summary ? `${change.before_summary} → ` : ""}
+                                                {change.before_summary
+                                                    ? `${change.before_summary} → `
+                                                    : ""}
                                                 {change.after_summary ?? ""}
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
                                     <p className="mt-2 text-xs text-muted-foreground">
-                                        This is the first version of the plan, so there is nothing to compare it against
-                                        yet.
+                                        This is the first version of the plan, so there is nothing
+                                        to compare it against yet.
                                     </p>
                                 )}
                             </div>

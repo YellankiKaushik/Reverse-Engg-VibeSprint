@@ -415,16 +415,10 @@ export const selectStrategy = createServerFn({ method: "POST" })
     )
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
-        await supabase
-            .from("strategies")
-            .update({ selected: false })
-            .eq("plan_version_id", data.versionId)
-            .eq("user_id", userId);
-        const { error } = await supabase
-            .from("strategies")
-            .update({ selected: true })
-            .eq("id", data.strategyId)
-            .eq("user_id", userId);
+        const { error } = await supabase.rpc("select_plan_strategy", {
+            target_version_id: data.versionId,
+            target_strategy_id: data.strategyId,
+        });
         if (error) throw new Error(error.message);
 
         const telemetry = await import("@/lib/telemetry.server");

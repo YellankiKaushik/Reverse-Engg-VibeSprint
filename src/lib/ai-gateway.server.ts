@@ -134,6 +134,11 @@ export function timeoutMs() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 90_000;
 }
 
+export function maxOutputTokens() {
+    const parsed = Number(process.env["AI_MAX_OUTPUT_TOKENS"]);
+    return Number.isFinite(parsed) && parsed >= 256 ? Math.min(16_384, Math.floor(parsed)) : 16_384;
+}
+
 export function maxProviderRetries() {
     const parsed = Number(process.env["AI_PROVIDER_MAX_RETRIES"]);
     if (!Number.isFinite(parsed) || parsed < 0) return 1;

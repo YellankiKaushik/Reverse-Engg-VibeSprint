@@ -830,6 +830,14 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            select_plan_strategy: {
+                Args: { target_version_id: string; target_strategy_id: string };
+                Returns: undefined;
+            };
+            save_plan_check_in: {
+                Args: { target_plan_id: string; note: string; progress_rating: number | null; changed_facts: Json };
+                Returns: undefined;
+            };
             persist_plan_graph: {
                 Args: { target_plan_id: string; payload: Json; activate?: boolean };
                 Returns: Json;

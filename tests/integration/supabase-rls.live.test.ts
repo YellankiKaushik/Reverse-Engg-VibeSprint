@@ -405,6 +405,74 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         expect(denied.error).not.toBeNull();
     }, 30_000);
 
+    it("rolls back failed check-ins and makes strategy selection atomic and version-scoped", async () => {
+        const ids = await createUserAPlanGraph();
+        const failed = await userA.rpc("save_plan_check_in", {
+            target_plan_id: ids.planId,
+            note: "must roll back",
+            progress_rating: 3,
+            changed_facts: [{ category: "INVALID", key: "capacity", value: "five hours" }],
+        });
+        expect(failed.error).not.toBeNull();
+        expect(
+            (await userA.from("check_ins").select("id").eq("plan_id", ids.planId)).data,
+        ).toHaveLength(1);
+        const saved = await userA.rpc("save_plan_check_in", {
+            target_plan_id: ids.planId,
+            note: "capacity changed",
+            progress_rating: 3,
+            changed_facts: [{ category: "RESOURCE", key: "capacity", value: "five hours" }],
+        });
+        expect(saved.error).toBeNull();
+        expect(
+            (await userA.from("case_context_facts").select("key").eq("case_id", ids.caseId)).data,
+        ).toEqual([{ key: "capacity" }]);
+        expect(
+            (
+                await userB.rpc("save_plan_check_in", {
+                    target_plan_id: ids.planId,
+                    note: "denied",
+                    progress_rating: null,
+                    changed_facts: [],
+                })
+            ).error,
+        ).not.toBeNull();
+        const other = await createUserAPlanGraph();
+        const wrongVersion = await userA.rpc("select_plan_strategy", {
+            target_version_id: ids.versionId,
+            target_strategy_id: other.strategyId,
+        });
+        expect(wrongVersion.error).not.toBeNull();
+        expect(
+            (await userA.from("strategies").select("selected").eq("id", ids.strategyId).single())
+                .data?.selected,
+        ).toBe(true);
+        const second = await userA
+            .from("strategies")
+            .insert({ user_id: userAId, plan_version_id: ids.versionId, name: "Alternative" })
+            .select("id")
+            .single();
+        expect(second.error).toBeNull();
+        const choices = await Promise.all(
+            [ids.strategyId, second.data!.id].map((target_strategy_id) =>
+                userA.rpc("select_plan_strategy", {
+                    target_version_id: ids.versionId,
+                    target_strategy_id,
+                }),
+            ),
+        );
+        expect(choices.every((r) => !r.error)).toBe(true);
+        expect(
+            (
+                await userA
+                    .from("strategies")
+                    .select("id")
+                    .eq("plan_version_id", ids.versionId)
+                    .eq("selected", true)
+            ).data,
+        ).toHaveLength(1);
+    }, 30_000);
+
     async function expectUserBDenied(
         table:
             | "intake_cases"

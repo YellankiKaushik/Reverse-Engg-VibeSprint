@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { computeFrontier, progressOf, findHardCycle } from "@/domain/frontier";
+import {
+    computeFrontier,
+    progressOf,
+    findHardCycle,
+    executionNodesForStrategy,
+} from "@/domain/frontier";
 import type { GraphEdge, GraphNode } from "@/domain/types";
 
 const node = (overrides: Partial<GraphNode> & Pick<GraphNode, "id" | "title">): GraphNode => ({
@@ -27,6 +32,21 @@ const edge = (
 });
 
 describe("computeFrontier", () => {
+    it("executes the selected strategy without requiring alternative-route work", () => {
+        const nodes = [
+            node({ id: "shared", title: "Shared prerequisite", status: "DONE" }),
+            node({ id: "a", title: "Route A", strategy_id: "A" }),
+            node({ id: "b", title: "Route B", strategy_id: "B" }),
+        ];
+        const edges = [edge({ from_node_id: "shared", to_node_id: "a" })];
+        const chosen = executionNodesForStrategy(nodes, edges, "A");
+        expect(computeFrontier(chosen, edges).ready.map((c) => c.node.id)).toEqual(["a"]);
+        expect(progressOf(chosen)).toEqual({ done: 1, total: 2, percent: 50 });
+        expect(executionNodesForStrategy(nodes, edges, "B").map((n) => n.id)).toEqual([
+            "shared",
+            "b",
+        ]);
+    });
     it("uses the same BLOCKED_BY direction for frontier and cycle validation", () => {
         const nodes = [node({ id: "a", title: "A" }), node({ id: "b", title: "B" })];
         const sameDependency = [

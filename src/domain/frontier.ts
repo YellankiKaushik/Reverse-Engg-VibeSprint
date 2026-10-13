@@ -15,6 +15,33 @@ import {
 
 const EPSILON = 0.25;
 
+/** Execute the chosen route plus shared work and its hard prerequisites. */
+export function executionNodesForStrategy(
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+    strategyId: string | null,
+) {
+    if (!strategyId) return nodes;
+    const included = new Set(
+        nodes.filter((n) => !n.strategy_id || n.strategy_id === strategyId).map((n) => n.id),
+    );
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const edge of edges) {
+            if (!edge.hard_dependency || !HARD_EDGE_TYPES.includes(edge.edge_type)) continue;
+            const prerequisite =
+                edge.edge_type === "BLOCKED_BY" ? edge.to_node_id : edge.from_node_id;
+            const dependent = edge.edge_type === "BLOCKED_BY" ? edge.from_node_id : edge.to_node_id;
+            if (included.has(dependent) && !included.has(prerequisite)) {
+                included.add(prerequisite);
+                changed = true;
+            }
+        }
+    }
+    return nodes.filter((n) => included.has(n.id));
+}
+
 interface Weights {
     impact: number;
     successLikelihood: number;
