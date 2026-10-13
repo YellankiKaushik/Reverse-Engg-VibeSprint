@@ -16,6 +16,8 @@
 
 The remaining manual action is to configure an existing SMTP provider privately in the ReversePath Supabase project's Authentication email settings. Alternatively, waiting for the built-in email rate limit to reset allows another acceptance attempt, but does not establish reliable email delivery for public signup. Credentials must stay in Supabase, not chat or Git.
 
+The user chose to wait for the email rate limit to reset. A single follow-up in this chat is scheduled for approximately **16:00 IST on October 13, 2026** to retry staged signup, then continue promotion/public acceptance if it passes. If the reset reveals another default-email sender restriction, report that exact blocker; do not claim waiting established production email reliability.
+
 ## Architecture actually running
 
 React 19 and TypeScript use TanStack Start SSR/server functions, Router, and Query. Tailwind and the existing UI components remain in place. Nitro builds a Node 24 Vercel server handler; this is not a static-only deployment.

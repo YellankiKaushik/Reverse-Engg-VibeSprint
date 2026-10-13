@@ -44,6 +44,8 @@ The three new migrations make action updates/edits, full graph persistence, vers
 
 Real email signup using a valid reserved-domain fixture returned **HTTP 429 `over_email_send_rate_limit`**. Supabase's built-in email provider has a very small project delivery limit. The user was asked to configure an existing SMTP provider privately in the project's Authentication email settings. Do not change confirmation policy, fabricate delivery, or provision paid resources.
 
+The user selected **wait for the email rate limit to reset**. A single chat follow-up is scheduled for about **16:00 IST, October 13, 2026**, to retry signup. The user has not reported SMTP configuration. Stop the follow-up after handling it; if a sender restriction appears, report it and preserve the public demo.
+
 1. After SMTP/account configuration or rate-limit recovery, rerun `tests/e2e/signup-confirmation.spec.ts` with `RUN_E2E_SIGNUP=true` on the staged URL. Use an owned mailbox separately if actual inbox delivery is to be certified; the reserved-domain test exercises the endpoint and genuine callback.
 2. Only after signup acceptance passes, promote the verified staged Production deployment to the public domain.
 3. Run the Golden Path, signup and demo tests against the public domain. Update the readiness report with actual public results before claiming completion.
