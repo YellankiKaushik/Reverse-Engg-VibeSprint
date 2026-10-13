@@ -1,3 +1,5 @@
+> **Historical document — superseded by the OpenRouter-only cleanup on October 13, 2026.** Previous provider, account, project, deployment and environment instructions below are retained as history. Use [SIMPLE_ARCHITECTURE.md](SIMPLE_ARCHITECTURE.md), [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md), and [FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) for current setup and evidence. Do not use deleted-project credentials or replay historical deployment/migration instructions.
+
 # ReversePath email setup
 
 Checked October 13, 2026. Release remains blocked until a real signup confirmation reaches an owned inbox and its link establishes the correct session. Supabase custom SMTP is currently disabled; confirmation is enabled. Waiting for the built-in sender's quota reset does not remove its team-recipient restriction. [Supabase SMTP requirements](https://supabase.com/docs/guides/auth/auth-smtp).

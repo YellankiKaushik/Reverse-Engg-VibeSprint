@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { lovable } from "@/integrations/lovable/index";
+
 import { supabase, supabaseConfigurationError } from "@/integrations/supabase/client";
 import { authErrorMessage } from "@/lib/auth-errors";
 
@@ -84,19 +84,11 @@ function AuthPage() {
         setSubmitError(null);
         setBusy(true);
         try {
-            if (import.meta.env["VITE_AUTH_PROVIDER"] === "lovable") {
-                const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                });
-                if (result.error) throw result.error;
-                if (!result.redirected) navigate({ to: "/" });
-            } else {
-                const { error } = await supabase.auth.signInWithOAuth({
-                    provider: "google",
-                    options: { redirectTo: window.location.origin },
-                });
-                if (error) throw error;
-            }
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: window.location.origin },
+            });
+            if (error) throw error;
         } catch (error) {
             toast.error((error as Error).message || "Google sign-in failed.");
         } finally {

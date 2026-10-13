@@ -75,7 +75,7 @@ for (const scenario of scenarios) {
             }
             await page.getByRole("button", { name: /generate plan/i }).click();
             await expect(page.getByText(/plan generated/i)).toBeVisible({ timeout: 150_000 });
-            await expect(page.getByText(/Live AI plan · openai · gpt-6-luna/)).toBeVisible();
+            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
             const cases = await admin.from("intake_cases").select("id").eq("user_id", userId);
             expect(cases.data).toHaveLength(1);
             const plan = await admin
@@ -117,8 +117,30 @@ for (const scenario of scenarios) {
                 .eq("user_id", userId);
             expect(actions.data!.every((a) => a.completion_criteria.trim().length > 0)).toBe(true);
             await page.reload();
-            await expect(page.getByText(/Live AI plan · openai · gpt-6-luna/)).toBeVisible();
+            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
+            const progressPanel = page
+                .locator("div.panel")
+                .filter({ has: page.getByText("Progress", { exact: true }) });
+            const initialProgress = (await progressPanel.textContent()) ?? "";
+            await page
+                .getByRole("button", { name: /^done$/i })
+                .first()
+                .click();
+            await expect(progressPanel).not.toHaveText(initialProgress);
+            const completedProgress = (await progressPanel.textContent()) ?? "";
+            const completedActions = await admin
+                .from("actions")
+                .select("id, completed_at")
+                .eq("user_id", userId)
+                .not("completed_at", "is", null);
+            expect(completedActions.error).toBeNull();
+            expect(completedActions.data!.length).toBeGreaterThan(0);
+            await page.reload();
+            await expect(progressPanel).toHaveText(completedProgress);
+            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
+            await page.setViewportSize({ width: 390, height: 844 });
+            await expect(progressPanel).toBeVisible();
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
             ).toBe(false);

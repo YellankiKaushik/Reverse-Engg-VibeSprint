@@ -4,7 +4,8 @@ import { test as base, expect } from "@playwright/test";
 export const test = base.extend({
     page: async ({ page, baseURL }, runFixture) => {
         const token = process.env["VERCEL_AUTOMATION_BYPASS_SECRET"];
-        if (token && baseURL) {
+        const oidc = process.env["VERCEL_OIDC_TOKEN"];
+        if ((token || oidc) && baseURL) {
             const origin = new URL(baseURL).origin;
             await page.route(
                 (url) => url.origin === origin,
@@ -12,8 +13,12 @@ export const test = base.extend({
                     route.continue({
                         headers: {
                             ...route.request().headers(),
-                            "x-vercel-protection-bypass": token,
-                            "x-vercel-set-bypass-cookie": "true",
+                            ...(token
+                                ? {
+                                      "x-vercel-protection-bypass": token,
+                                      "x-vercel-set-bypass-cookie": "true",
+                                  }
+                                : { "x-vercel-trusted-oidc-idp-token": oidc! }),
                         },
                     }),
             );

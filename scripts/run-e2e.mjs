@@ -5,47 +5,8 @@ function loadProjectEnv() {
     const mode = process.env.MODE ?? process.env.NODE_ENV ?? "test";
     const env = loadEnv(mode, process.cwd(), "");
     for (const [key, value] of Object.entries(env)) {
-        if (key.startsWith("SUPABASE_TEST_")) {
-            process.env[key] = value;
-            continue;
-        }
         if (process.env[key] === undefined) process.env[key] = value;
     }
-}
-
-function testPublishableKey() {
-    if (!process.env.SUPABASE_TEST_URL) {
-        return process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    }
-
-    return (
-        process.env.SUPABASE_TEST_PUBLISHABLE_KEY ||
-        process.env.SUPABASE_TEST_ANON_KEY ||
-        process.env.SUPABASE_PUBLISHABLE_KEY ||
-        process.env.VITE_SUPABASE_PUBLISHABLE_KEY
-    );
-}
-
-function testSecretKey() {
-    if (!process.env.SUPABASE_TEST_URL) {
-        return process.env.SUPABASE_SERVICE_ROLE_KEY;
-    }
-
-    return (
-        process.env.SUPABASE_TEST_SECRET_KEY ||
-        process.env.SUPABASE_TEST_SERVICE_ROLE_KEY ||
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-}
-
-function supabaseTestUrl() {
-    return (
-        process.env.SUPABASE_TEST_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    );
-}
-
-function hasSupabaseLiveTestCredentials() {
-    return Boolean(supabaseTestUrl() && testPublishableKey() && testSecretKey());
 }
 
 loadProjectEnv();
@@ -88,16 +49,6 @@ async function run() {
         SUPABASE_URL: process.env.SUPABASE_URL ?? "http://127.0.0.1:54321",
         SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY ?? "test-publishable-key",
     };
-
-    if (runGolden && hasSupabaseLiveTestCredentials()) {
-        // Honor the same AI mode, routes, and allowlist used by the actual app.
-        // This permits RouterPlus through the existing OpenAI-compatible adapter.
-        serverEnv.VITE_SUPABASE_URL = supabaseTestUrl();
-        serverEnv.VITE_SUPABASE_PUBLISHABLE_KEY = testPublishableKey();
-        serverEnv.SUPABASE_URL = supabaseTestUrl();
-        serverEnv.SUPABASE_PUBLISHABLE_KEY = testPublishableKey();
-        serverEnv.SUPABASE_SERVICE_ROLE_KEY = testSecretKey();
-    }
 
     const server = ownsServer
         ? spawnNode(

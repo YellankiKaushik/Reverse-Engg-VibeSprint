@@ -1,8 +1,10 @@
+> **Historical document — superseded by the OpenRouter-only cleanup on October 13, 2026.** Previous provider, account, project, deployment and environment instructions below are retained as history. Use [SIMPLE_ARCHITECTURE.md](SIMPLE_ARCHITECTURE.md), [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md), and [FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) for current setup and evidence. Do not use deleted-project credentials or replay historical deployment/migration instructions.
+
 # ReversePath Vibe Sprint setup
 
 ## Dedicated Supabase project
 
-**Current project is already created and migrated:** ReversePath, reference `kvytcttuskwwbmmmjjri`, Singapore, user's kaushikyellanki account. Use the authenticated CLI for this account; the connected MCP account differs. Eight migrations are applied, including the three October 13 transaction migrations. Do not create another project, run the bootstrap, or repeat initialization. Instructions below remain a reference for private configuration.
+**Current local target:** Reverse Engineering, reference `usvopldwiwzlvoqawvcu`, Tokyo, in Reverse Engg. The previous project was deleted. The connected Supabase tool verified the existing schema and applied the four missing migrations after explicit user approval, without CLI login. All eight migrations are recorded; real local plan saving, completion, progress, and refresh tests pass. See [localhost verification](REVERSEPATH_LOCALHOST_VERIFICATION.md) and the [release checklist](NEW_BACKEND_RELEASE_CHECKLIST.md). Do not run the legacy bootstrap or initialize the project again. Deployment waits for the user to replace Vercel environment values.
 
 1. Open https://supabase.com/dashboard and select **New project** in your own organization.
 2. Name it **ReversePath-VibeSprint**. Choose an available Asia region near your users and a strong database password. Keep the password private; the application does not need that password in `.env`.
@@ -25,7 +27,7 @@ Never place a secret/service-role key in any `VITE_*` variable. Never send crede
 
 ### Install the existing schema, only on the new empty project
 
-The configured project already has the full schema and all eight migrations. Real rollback, concurrency, ownership and activation tests pass. The bootstrap instructions below are historical reference for a new empty project, not instructions to rerun them on ReversePath.
+The new project's schema is now complete. Its four base migrations were originally recorded under different timestamps from the repository; the four approved missing migrations are recorded under their actual application timestamps. Do not replay initial CREATE TABLE migrations, repair history to match filenames, or rerun the supplied SQL patch. The CLI workflow below is reference for future authorized changes, not required setup for this verified project.
 
 Preferred CLI workflow (inspect `npx supabase --help` and subcommand help before use):
 

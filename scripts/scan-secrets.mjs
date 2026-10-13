@@ -30,6 +30,8 @@ for (const file of tracked)
     if (/(^|\/)\.env(?:\.|$)/.test(file) && !file.endsWith(".env.example"))
         findings.push(`${file}: tracked environment file`);
 function inspect(file) {
+    // git ls-files includes tracked files deleted by the current refactor.
+    if (!existsSync(file)) return;
     const content = readFileSync(file, "utf8");
     if ([...privateValues].some((value) => content.includes(value)))
         findings.push(`${file}: private credential match`);

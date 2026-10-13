@@ -165,7 +165,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(page.locator("main").getByText(/^Risks & premortem$/)).toBeVisible();
             await expect(page.locator("main").getByText(/^Execution frontier/)).toBeVisible();
             if (process.env["AI_PROVIDER_MODE"] === "live") {
-                await expect(page.getByText(/Live AI plan · openai · /)).toBeVisible();
+                await expect(page.getByText(/Live AI plan · openrouter · /)).toBeVisible();
             }
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
             const progressPanel = page

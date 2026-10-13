@@ -1,21 +1,18 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { afterEach, expect, it, vi } from "vitest";
-import { candidatesForAlias } from "@/lib/ai-gateway.server";
+import { candidateForAlias } from "@/lib/ai-gateway.server";
 
 afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
 });
 
-it("sends authenticated schema generation to the RouterPlus-compatible endpoint", async () => {
+it("sends authenticated schema generation to the OpenRouter endpoint", async () => {
     vi.stubEnv("AI_PROVIDER_MODE", "live");
-    vi.stubEnv("AI_PROVIDER_ALLOWLIST", "openai");
-    vi.stubEnv("AI_ROUTE_FAST", "openai");
-    vi.stubEnv("OPENAI_ENABLED", "true");
-    vi.stubEnv("OPENAI_API_KEY", "test-private-key");
-    vi.stubEnv("OPENAI_BASE_URL", "https://api.routerplus.com/v1");
-    vi.stubEnv("OPENAI_MODEL_FAST", "test-model");
+    vi.stubEnv("OPENROUTER_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
+    vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test-model");
     const mockFetch = vi.fn(
         async () =>
             new Response(
@@ -37,16 +34,18 @@ it("sends authenticated schema generation to the RouterPlus-compatible endpoint"
             ),
     );
     vi.stubGlobal("fetch", mockFetch);
-    const [candidate] = candidatesForAlias("FAST");
+    const candidate = candidateForAlias("FAST");
     const result = await generateObject({
         model: candidate!.model,
         schema: z.object({ ok: z.literal(true) }),
         prompt: "Set ok to true.",
+        providerOptions: { openrouter: { provider: { require_parameters: true } } },
         maxRetries: 0,
     });
     expect(result.object).toEqual({ ok: true });
     const [url, init] = mockFetch.mock.calls[0] as unknown as [string, RequestInit];
-    expect(String(url)).toBe("https://api.routerplus.com/v1/chat/completions");
+    expect(String(url)).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(new Headers(init.headers).get("authorization")).toBe("Bearer test-private-key");
     expect(JSON.parse(String(init.body)).response_format.type).toBe("json_schema");
+    expect(JSON.parse(String(init.body)).provider.require_parameters).toBe(true);
 });
