@@ -51,3 +51,7 @@ The user selected **wait for the email rate limit to reset**. A single chat foll
 3. Run the Golden Path, signup and demo tests against the public domain. Update the readiness report with actual public results before claiming completion.
 
 Independent work is complete. Do not repeat the 18 paid calls or migrations just because public promotion remains blocked. Ancillary replan context/diff writes and crash-abandoned idempotency reservations remain documented limitations. The security advisor reports only disabled leaked-password protection.
+
+## Email blocker continuation — October 13, 2026
+
+Custom SMTP remains disabled; confirmation remains enabled. The user prefers Resend but owns no domain and has not authorized any purchase. The domainless Brevo temporary sender-replacement route is an option subject to provider activation and actual inbox testing. Follow [REVERSEPATH_EMAIL_SETUP.md](REVERSEPATH_EMAIL_SETUP.md) for exact private setup. Independent checks again passed: 50 automated tests, eight staged smoke and four public smoke; no additional paid AI or app edits. Do not promote or integrate main until real email receipt and release acceptance pass.

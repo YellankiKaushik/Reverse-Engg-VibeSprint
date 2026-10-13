@@ -163,3 +163,5 @@ If Supabase CLI authentication is unavailable while bootstrapping the remote sch
 - AI requests execute server-side through provider adapters.
 - AI output is schema-validated and graph-validated before persistence.
 - Deterministic logic owns executable frontier, dependency satisfaction, action status transitions, plan activation, version numbering, progress calculation, authorization, and plan diff generation where possible.
+
+Email release blocker: custom SMTP remains disabled; email confirmation stays enabled. See [private SMTP and domain setup](docs/REVERSEPATH_EMAIL_SETUP.md) for Resend and a possible free Brevo alternative. Actual inbox receipt is required before promotion.
