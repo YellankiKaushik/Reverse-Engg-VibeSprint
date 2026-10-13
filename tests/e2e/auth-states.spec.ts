@@ -70,3 +70,64 @@ test("failed sign-in keeps the form available and reports the error", async ({ p
     await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeEnabled();
     await expect(page).toHaveURL(/\/auth/);
 });
+
+for (const failure of [
+    {
+        name: "email rate limit",
+        status: 429,
+        code: "over_email_send_rate_limit",
+        message: "email rate limit exceeded",
+        expected: "Confirmation emails are temporarily rate limited",
+    },
+    {
+        name: "restricted email sender",
+        status: 403,
+        code: "email_address_not_authorized",
+        message: "Email address not authorized",
+        expected: "Confirmation email delivery is currently unavailable",
+    },
+    {
+        name: "email delivery failure",
+        status: 500,
+        code: "unexpected_failure",
+        message: "Error sending confirmation email",
+        expected: "Confirmation email delivery is currently unavailable",
+    },
+]) {
+    test(`signup recovers from ${failure.name} without resending automatically`, async ({
+        page,
+    }) => {
+        test.skip(
+            !process.env["VITE_SUPABASE_URL"] || !process.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
+            "Requires a configured public client; every signup response is intercepted.",
+        );
+        let requests = 0;
+        await page.route("**/auth/v1/signup**", (route) => {
+            requests += 1;
+            return route.fulfill({
+                status: failure.status,
+                contentType: "application/json",
+                headers: {
+                    "x-supabase-api-version": "2024-01-01",
+                    "access-control-expose-headers": "x-supabase-api-version",
+                },
+                body: JSON.stringify({ code: failure.code, msg: failure.message }),
+            });
+        });
+        await page.goto("/auth");
+        await page.getByRole("button", { name: "No account yet? Create one" }).click();
+        await page.getByLabel("Email").fill("signup-regression@example.com");
+        await page.getByLabel("Password").fill("ReversePath-test-only-123");
+        await page.getByRole("button", { name: "Create account", exact: true }).click();
+        await expect(page.getByRole("alert")).toContainText(failure.expected);
+        await expect(
+            page.getByRole("button", { name: "Create account", exact: true }),
+        ).toBeEnabled();
+        await expect(page.getByLabel("Email")).toHaveValue("signup-regression@example.com");
+        await expect(page.getByRole("status")).toHaveCount(0);
+        await expect(page).toHaveURL(/\/auth/);
+        expect(requests).toBe(1);
+        await page.getByRole("button", { name: "Already have an account? Sign in" }).click();
+        await expect(page.getByRole("alert")).toHaveCount(0);
+    });
+}

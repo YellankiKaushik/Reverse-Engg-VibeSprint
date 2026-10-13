@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase, supabaseConfigurationError } from "@/integrations/supabase/client";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/auth")({
     head: () => ({
@@ -35,6 +36,7 @@ function AuthPage() {
     const [password, setPassword] = useState("");
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const { session, loading, error: authError } = useAuth();
     const configurationError = supabaseConfigurationError();
     const navigate = useNavigate();
@@ -47,6 +49,7 @@ function AuthPage() {
         event.preventDefault();
         if (configurationError || busy) return;
         setNotice(null);
+        setSubmitError(null);
         setBusy(true);
         try {
             if (mode === "signup") {
@@ -70,7 +73,7 @@ function AuthPage() {
             }
             navigate({ to: "/" });
         } catch (error) {
-            toast.error((error as Error).message);
+            setSubmitError(authErrorMessage(error, mode));
         } finally {
             setBusy(false);
         }
@@ -78,6 +81,7 @@ function AuthPage() {
 
     async function google() {
         if (configurationError || busy) return;
+        setSubmitError(null);
         setBusy(true);
         try {
             if (import.meta.env["VITE_AUTH_PROVIDER"] === "lovable") {
@@ -112,9 +116,9 @@ function AuthPage() {
                 </p>
 
                 <div className="panel mt-6 p-5">
-                    {authError ? (
+                    {submitError || authError ? (
                         <p role="alert" className="mb-4 text-sm text-destructive">
-                            {authError}
+                            {submitError || authError}
                         </p>
                     ) : null}
                     {notice ? (
@@ -178,7 +182,11 @@ function AuthPage() {
                         type="button"
                         disabled={loading || busy}
                         className="mt-4 w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
-                        onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                        onClick={() => {
+                            setSubmitError(null);
+                            setNotice(null);
+                            setMode(mode === "signin" ? "signup" : "signin");
+                        }}
                     >
                         {mode === "signin"
                             ? "No account yet? Create one"
