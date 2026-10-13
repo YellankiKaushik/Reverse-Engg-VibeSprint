@@ -1,3 +1,9 @@
+# Current production readiness — October 14, 2026
+
+**Preview live application PASS; Production release BLOCKED.** The OpenRouter-only candidate from source commit 933385e999e6fc31b1b4e5b65bb264bb6a81ec10 is READY at https://reversepath-vibesprint-4nqt9wyek-kaushik-yellanki-project.vercel.app. Hosted real planning, persistence, completion/progress/refresh, replanning, mobile behavior, isolation and quota enforcement pass. Both Vercel environments match the new Supabase/OpenRouter configuration.
+
+Supabase confirmation redirects for production and Preview currently fall back to http://localhost:3000, and real signup email receipt is unverified. The production alias remains on its prior deployment; no promotion, push, or merge occurred. See [the current release verification](PRODUCTION_RELEASE_VERIFICATION.md) for test counts, cost, rollback deployment and exact manual actions. The historical report below is retained unchanged after its banner.
+
 > **Historical document — superseded by the OpenRouter-only cleanup on October 13, 2026.** Previous provider, account, project, deployment and environment instructions below are retained as history. Use [SIMPLE_ARCHITECTURE.md](SIMPLE_ARCHITECTURE.md), [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md), and [FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) for current setup and evidence. Do not use deleted-project credentials or replay historical deployment/migration instructions.
 
 # ReversePath production readiness — October 13, 2026

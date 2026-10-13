@@ -1,5 +1,7 @@
 # Final configuration report
 
+> Configuration snapshot from October 13, before the release commit and hosted Preview. For current commit/deployment status and auth release blockers, see [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
+
 October 13, 2026. **REVERSEPATH CONFIGURATION SIMPLIFIED — READY FOR MANUAL VERCEL SETUP.**
 
 ## A. Final architecture

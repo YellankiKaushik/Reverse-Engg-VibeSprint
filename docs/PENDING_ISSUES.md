@@ -1,5 +1,13 @@
 # Pending issues
 
+## Current release blockers — October 14, 2026
+
+- **BLOCKED: Supabase hosted confirmation redirects.** Generated signup links for both https://reversepath-vibesprint.vercel.app and the verified Preview origin resolve to http://localhost:3000. Set the new project's Auth Site URL to the production origin and explicitly allow production and the Preview URL in Redirect URLs, retaining required local entries. No Auth setting was changed automatically.
+- **BLOCKED: real signup email acceptance.** Confirmation remains enabled. No authorized real disposable mailbox is configured and no actual inbox receipt has been verified. Keep the verified Preview; do not promote until the public signup acceptance criteria pass.
+- **BLOCKED: Production and subsequent GitHub release.** The source is committed locally and Preview passes; user-required release gates prevent promotion and the post-release push/PR/merge steps.
+
+Details and exact URLs are in [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md). The prior maintenance notes below remain relevant where stated.
+
 Updated October 13, 2026, after the OpenRouter-only cleanup.
 
 1. **Real public signup/email delivery is not verified.** One opt-in test used a generated `example.com` address and Supabase rejected it with HTTP 400 `email_address_invalid`. This does not establish that a legitimate mailbox fails. The test now requires an authorized disposable `E2E_SIGNUP_EMAIL_TEMPLATE` containing `{runId}` and skips without it. No further signup email attempts were made. Generated real confirmation-link callbacks, login, logout, and refresh persistence pass; they do not verify inbox delivery. For public release acceptance, run the gate with a mailbox you control and confirm receipt manually. Do not disable confirmation or repeatedly resend.

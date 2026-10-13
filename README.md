@@ -4,7 +4,7 @@ ReversePath turns a goal into a structured plan with prerequisites, strategies, 
 
 **Three external services:** Supabase for authentication, PostgreSQL and storage; OpenRouter for all real AI inference; Vercel for hosting the React/TanStack Start application and server functions. Mock AI and the labelled offline /demo example remain available.
 
-Start with [the simple architecture](docs/SIMPLE_ARCHITECTURE.md), [the single environment checklist](docs/VERCEL_ENV_SETUP.md), and [the verification report](docs/FINAL_CONFIGURATION_REPORT.md). The current working tree has not been deployed. Previous release reports are historical and do not describe the current OpenRouter configuration.
+Start with [the simple architecture](docs/SIMPLE_ARCHITECTURE.md), [the single environment checklist](docs/VERCEL_ENV_SETUP.md), and [the verification report](docs/FINAL_CONFIGURATION_REPORT.md). The OpenRouter candidate is deployed and verified on Preview; production release is blocked on Supabase confirmation redirects and real signup email delivery. See [hosted release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md). Previous release reports are historical and do not describe the current OpenRouter configuration.
 
 ## Run locally
 
@@ -49,4 +49,4 @@ The product flow remains login → goal → analysis → plan → activation →
 
 ## Vercel
 
-Reuse reversepath-vibesprint. Manually configure both Production and Preview using [VERCEL_ENV_SETUP.md](docs/VERCEL_ENV_SETUP.md). Use Node 24, npm ci, and npm run build:vercel. Test a preview and staged production candidate before promotion, preserve the previous deployment, and never force-push published history. No deployment, Vercel configuration change, push, or merge is part of this cleanup.
+Reuse reversepath-vibesprint. Manually configure both Production and Preview using [VERCEL_ENV_SETUP.md](docs/VERCEL_ENV_SETUP.md). Use Node 24, npm ci, and npm run build:vercel. Test a preview and staged production candidate before promotion, preserve the previous deployment, and never force-push published history. The verified Preview is retained while auth release gates are resolved. Production promotion and GitHub release are withheld; see the hosted verification report.

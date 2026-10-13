@@ -34,7 +34,7 @@ npm run check:env
 npm run dev
 ```
 
-Open http://localhost:5173. Keep `AI_PROVIDER_MODE=mock` for no-cost development. Before real AI, run `npm run check:ai`, set `AI_PROVIDER_MODE=live` explicitly, and restart the server. Live requests use the same OpenRouter model for intake, generation, and replanning. Default timeout is 90 seconds, retries zero, output limit 12,000 tokens, and user daily operation limit 10. See [.env.example](../.env.example) and the single [environment checklist](VERCEL_ENV_SETUP.md).
+Open http://localhost:5173. Keep `AI_PROVIDER_MODE=mock` for no-cost development. Before real AI, run `npm run check:ai`, set `AI_PROVIDER_MODE=live` explicitly, and restart the server. Live requests use the same OpenRouter model for intake, generation, and replanning. Default timeout is 90 seconds, retries zero, output limit 12,000 tokens, and per-user daily limits of 20 intake analyses and 10 plan generations/replans, independently per operation. See [.env.example](../.env.example) and the single [environment checklist](VERCEL_ENV_SETUP.md).
 
 Vite exposes only `VITE_*` settings in the browser bundle. Never put OpenRouter or Supabase server secrets under that prefix. The browser/server Supabase URL names share one URL; their publishable-key names share one credential. `VITE_SUPABASE_PROJECT_ID` and test-specific Supabase credentials are not required. Old local credentials are not rewritten; retired settings are ignored.
 
