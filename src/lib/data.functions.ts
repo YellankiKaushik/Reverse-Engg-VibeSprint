@@ -236,26 +236,8 @@ export const exportUserData = createServerFn({ method: "GET" })
     .middleware([requireSupabaseAuth])
     .handler(async ({ context }) => {
         const { supabase, userId } = context;
-        const tables = [
-            "intake_cases",
-            "case_context_facts",
-            "plans",
-            "plan_versions",
-            "plan_nodes",
-            "plan_edges",
-            "actions",
-            "strategies",
-            "assumptions",
-            "risks",
-            "plan_changes",
-            "check_ins",
-        ] as const;
-
-        const out: Record<string, JsonValue[]> = {};
-        for (const table of tables) {
-            const { data } = await supabase.from(table).select("*").eq("user_id", userId);
-            out[table] = (data ?? []) as unknown as JsonValue[];
-        }
+        const { readUserExport } = await import("@/lib/data-export.server");
+        const out = (await readUserExport(supabase, userId)) as Record<string, JsonValue[]>;
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({ userId, action: "DATA_EXPORTED" });

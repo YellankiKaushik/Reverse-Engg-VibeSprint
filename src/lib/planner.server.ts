@@ -76,6 +76,11 @@ export function validateProposal(proposal: PlanProposal) {
     const edges = proposal.edges;
 
     const strategyKeys = new Set(proposal.strategies.map((s) => s.key));
+    if (strategyKeys.size !== proposal.strategies.length)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed plan contains duplicate strategy keys.",
+        );
     const unknownStrategyNode = proposal.nodes.find(
         (n) => n.strategyKey && !strategyKeys.has(n.strategyKey),
     );

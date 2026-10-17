@@ -8,4 +8,5 @@ node_modules
 .vercel
 test-results
 playwright-report
+logs
 *.log

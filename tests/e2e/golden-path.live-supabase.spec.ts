@@ -167,11 +167,36 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             if (process.env["AI_PROVIDER_MODE"] === "live") {
                 await expect(page.getByText(/Live AI plan · openrouter · /)).toBeVisible();
             }
+            const selectedStrategy = page
+                .locator("article")
+                .filter({ has: page.getByRole("button", { name: "Selected", exact: true }) });
+            const strategyName = await selectedStrategy.getByRole("heading").textContent();
+            const alternate = page.getByRole("button", { name: "Choose this route", exact: true });
+            if (await alternate.count()) {
+                await alternate.first().click();
+                const original = page.locator("article").filter({
+                    has: page.getByRole("heading", { name: strategyName!, exact: true }),
+                });
+                await expect(
+                    original.getByRole("button", { name: "Choose this route", exact: true }),
+                ).toBeEnabled();
+                await original
+                    .getByRole("button", { name: "Choose this route", exact: true })
+                    .click();
+                await expect(
+                    original.getByRole("button", { name: "Selected", exact: true }),
+                ).toBeDisabled();
+            }
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
             const progressPanel = page
                 .locator("div.panel")
                 .filter({ has: page.getByText("Progress", { exact: true }) });
             const initialProgress = (await progressPanel.textContent()) ?? "";
+
+            await page.getByRole("button", { name: "in progress", exact: true }).first().click();
+            await expect(
+                page.locator("main").getByText("IN_PROGRESS", { exact: true }).first(),
+            ).toBeVisible();
 
             await page
                 .getByRole("button", { name: /^done$/i })
