@@ -1,5 +1,32 @@
 # Production release verification
 
+## Current verification — October 17, 2026
+
+**REVERSEPATH FINALIZATION BLOCKED — APPLICATION PREVIEW VERIFIED; SIGNUP ACCEPTANCE AND GITHUB PR ACCESS REMAIN OPEN.**
+
+- Candidate: `e77ad37a5c3b910fe23f3090dac0f4079419af19`, pushed on `codex/production-stabilization`.
+- Fresh Preview: https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app, `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH`, READY, Node 24. Vercel deployment metadata confirms the candidate SHA and branch.
+- Production/rollback remains `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`; public domain https://reversepath-vibesprint.vercel.app. No promotion or main merge occurred.
+- Production confirmation redirect now passes. The old required Preview and the new candidate Preview both fall back to the Production origin, not localhost. Their hosted callback acceptance is blocked until their exact origins are allowed.
+- **EMAIL_DELIVERY_VERIFICATION: BLOCKED.** No authorized inbox was available. Generated confirmation links, admin-confirmed test accounts, and intercepted signup responses do not establish actual inbox delivery.
+- GitHub PR creation: HTTP 403 `Resource not accessible by integration`. Branch push works; no PR URL exists. Prepared text is in `REVERSEPATH_RELEASE_PR.md`.
+
+Fresh local results: environment/model checks, TypeScript, lint (zero errors, six existing warnings), **56 automated passes/one optional skip**, **14 local browser passes/five skips**, both build targets, zero audit vulnerabilities, and no source/generated-client/history secret findings. All 19 user-data server functions declare authentication middleware; real database tests cover ownership, isolation, rollback, prerequisites, and concurrency.
+
+Hosted suite: **13 passed, 0 failed, 3 skipped**. It verifies password authentication, real OpenRouter intake/planning, strategy switching, action start/completion, progress and refresh, check-ins, rejected/accepted replans, retained history, reauthentication, cross-user denial, desktop/mobile edits, exports, session refresh/expiry, quotas, deletion, and demo behavior. The three live scenarios were gated skips in this run. Unconfigured authentication, known-blocked Preview confirmation callback, and real public signup were explicitly excluded, not counted as passes. A separate mobile Learning scenario is reported below after its run.
+
+The full real-AI journey used **6 successful schema-valid calls**, **8,728 input tokens**, and **6,886 output tokens**, all through OpenRouter `openai/gpt-4.1-mini`. No mock substitution occurred. Disposable test-owned accounts were cleaned up. The deployed public-client audit inspected 20 HTML/JavaScript responses with the correct Supabase reference, zero secret findings, zero page errors, zero failed requests, and zero server errors in that scope. The deployment-scoped runtime-error query returned no records, including the final one-hour query after the mobile scenario; this is bounded evidence, not a claim of exhaustive log retention.
+
+The separate mobile **Learning scenario passed (1 passed, 0 failed, 0 skipped)**. It began at 390px, checked the persisted graph and completed action in Supabase, retained progress after refresh, and found no page errors or horizontal overflow. Its two real calls used 2,675 input and 2,811 output tokens. Total newly incurred live verification: **8 schema-valid calls, 11,403 input tokens, 9,697 output tokens**. Estimated cost at the catalog's $0.40/million input and $1.60/million output rates is **$0.0201**, below $2; this is not a provider billing statement.
+
+Vercel has the eight required variable names on shared Preview/Production entries without branch overrides. Secret-bearing env downloads were rejected by automatic approval review; values were not downloaded or rewritten. Hosted behavior and database assertions provide the functional Preview evidence. A distinct staged Production build still needs verification after the signup gates pass. The project currently has no Vercel Git link, so Git pushes are not assumed to deploy it automatically.
+
+Fixes in this audit: incomplete JSON exports now fail visibly; duplicate strategy keys fail graph validation. [FINAL_PROJECT_COMPLETION.md](FINAL_PROJECT_COMPLETION.md) contains the full feature matrix, detailed limits, manual actions, and deliberately deferred improvements.
+
+## Historical verification — October 14, 2026
+
+The record below is preserved as historical evidence. Its localhost redirect failure, deployment tip, and release actions are superseded by the current section above.
+
 October 14, 2026 (Asia/Calcutta; checks began October 13). **PREVIEW VERIFIED — PRODUCTION RELEASE BLOCKED ON AUTH REDIRECTS AND EMAIL ACCEPTANCE.**
 
 ## Deployment and source

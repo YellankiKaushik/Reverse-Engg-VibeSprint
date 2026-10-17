@@ -1,6 +1,20 @@
 # Pending issues
 
-## Current release blockers — October 14, 2026
+## Current release blockers — October 17, 2026
+
+- **Production confirmation redirect: RESOLVED.** Fresh generated signup links retain `https://reversepath-vibesprint.vercel.app`. The old localhost fallback is no longer the current failure.
+- **Preview confirmation redirects: BLOCKED.** Both the required old Preview (`reversepath-vibesprint-4nqt9wyek-kaushik-yellanki-project.vercel.app`) and the new verified candidate (`reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app`) fall back to Production. Allow their exact origins in the existing Supabase project's Auth redirect allowlist.
+- **EMAIL_DELIVERY_VERIFICATION: BLOCKED.** No authorized mailbox template or inbox access was available. The owner must register one disposable account, verify actual email receipt and its allowed destination, confirm it, and verify login/dashboard/logout/reauthentication. No real inbox delivery is claimed and confirmation was not disabled.
+- **GitHub PR creation: BLOCKED by integration permissions.** Create-PR returned HTTP 403 `Resource not accessible by integration`. Git push succeeded. Grant PR-write access or create the prepared draft PR from `REVERSEPATH_RELEASE_PR.md`.
+- **Production release/main finalization: WITHHELD by acceptance gates.** Keep the verified Preview and prior Production/rollback deployment. Do not merge or delete stabilization until signup acceptance and staged Production/public-domain verification pass. Main remains unchanged.
+
+Fresh local results: 56 automated tests passed with one optional live-smoke skip; 14 browser tests passed with five skips; TypeScript, lint (six existing warnings), both builds, npm audit, and secret scans passed. The exact-source Preview passed its hosted suite, including real AI replanning. Details and the feature verification matrix are in [FINAL_PROJECT_COMPLETION.md](FINAL_PROJECT_COMPLETION.md) and [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
+
+**FUTURE IMPROVEMENTS:** Google OAuth configuration, uploads, redesign/new features, new providers, analytics/monitoring integrations, optional refactoring, licensing, and CI infrastructure remain deferred. Existing warnings are not release blockers. Export failure handling and duplicate strategy-key validation were fixed in this audit.
+
+## Historical blockers and maintenance notes — October 14, 2026
+
+The following records are historical. In particular, their claims about both hosted origins falling back to localhost and all changes being local-only have been superseded above.
 
 - **BLOCKED: Supabase hosted confirmation redirects.** Generated signup links for both https://reversepath-vibesprint.vercel.app and the verified Preview origin resolve to http://localhost:3000. Set the new project's Auth Site URL to the production origin and explicitly allow production and the Preview URL in Redirect URLs, retaining required local entries. No Auth setting was changed automatically.
 - **BLOCKED: real signup email acceptance.** Confirmation remains enabled. No authorized real disposable mailbox is configured and no actual inbox receipt has been verified. Keep the verified Preview; do not promote until the public signup acceptance criteria pass.

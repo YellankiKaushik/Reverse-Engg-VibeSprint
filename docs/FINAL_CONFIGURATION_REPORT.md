@@ -1,5 +1,17 @@
 # Final configuration report
 
+## Current snapshot — October 17, 2026
+
+Fresh application configuration checks and the real OpenRouter key/model capability check pass. The eight required Vercel variables are present on shared Preview/Production entries without branch overrides. Hosted Preview behavior confirms Supabase project `usvopldwiwzlvoqawvcu`, live OpenRouter, and `openai/gpt-4.1-mini`. There is no new provider or project.
+
+Application candidate `e77ad37a5c3b910fe23f3090dac0f4079419af19` is pushed and deployed to READY Preview `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH`. The prior Production deployment is retained. Production promotion and the main merge are withheld pending signup acceptance. Production redirect generation passes; both tested Preview origins still fall back to Production; real inbox delivery is unverified. GitHub PR creation returned HTTP 403 `Resource not accessible by integration`.
+
+Fresh checks: 56 automated passes/one optional skip, 14 local browser passes/five skips, both build targets, TypeScript, lint with zero errors/six existing warnings, zero npm audit vulnerabilities, and no source/client/history secret findings. Hosted acceptance and detailed feature evidence are recorded in [FINAL_PROJECT_COMPLETION.md](FINAL_PROJECT_COMPLETION.md) and [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
+
+Automatic approval review rejected downloading secret-bearing Vercel environment files. Verification instead used variable names/scopes, origin-scoped short-lived OIDC authentication, actual hosted inference, and database assertions. No environment values were rewritten. Local mock mode and the existing local quota override remain intact. `AI_GENERATION_ENABLED` is not read at runtime; the implemented live switch is `OPENROUTER_ENABLED=false`.
+
+## Historical configuration snapshot — October 13, 2026
+
 > Configuration snapshot from October 13, before the release commit and hosted Preview. For current commit/deployment status and auth release blockers, see [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
 
 October 13, 2026. **REVERSEPATH CONFIGURATION SIMPLIFIED — READY FOR MANUAL VERCEL SETUP.**

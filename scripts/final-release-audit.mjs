@@ -27,7 +27,14 @@ for (const origin of [
     "https://reversepath-vibesprint.vercel.app",
     "https://reversepath-vibesprint-4nqt9wyek-kaushik-yellanki-project.vercel.app",
     "http://127.0.0.1:4173",
+    ...process.argv.slice(2),
 ]) {
+    if (
+        !/^https:\/\/reversepath-vibesprint(?:-[a-z0-9-]+)?\.vercel\.app$|^http:\/\/127\.0\.0\.1:4173$/.test(
+            origin,
+        )
+    )
+        throw new Error("Unexpected confirmation redirect test target");
     let id;
     try {
         const result = await admin.auth.admin.generateLink({

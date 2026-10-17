@@ -300,7 +300,7 @@ This repository is connected to Lovable. Keep pushed commits working and preserv
 
 ## Current limitations and release evidence
 
-The checked-in [release verification report](docs/PRODUCTION_RELEASE_VERIFICATION.md), dated **October 14, 2026**, records a verified Preview and withheld Production release. Its acceptance blockers are hosted confirmation links falling back to `http://localhost:3000` and unverified real signup-email delivery. This is dated repository evidence, not a fresh check of hosted services.
+The [October 17 completion audit](docs/FINAL_PROJECT_COMPLETION.md) records fresh automated checks, desktop/mobile browser checks, and real OpenRouter planning/replanning on a new Preview. Production confirmation redirects now work. Both tested Preview origins still fall back to Production, and actual signup-email delivery remains unverified without an authorized inbox. GitHub PR creation also returned an integration-permission error. Production promotion, merging into main, and deleting stabilization remain blocked; see the [release verification report](docs/PRODUCTION_RELEASE_VERIFICATION.md) for exact evidence and next actions.
 
 The graph UI presents grouped plan content and dependencies rather than a draggable canvas. Mock proposals are generic fixtures. Live replanning receives the previous snapshot for continuity, but persistence creates new nodes with pending status rather than automatically transferring completion state. Storage has no upload UI. Settings export planning data; they do not implement account deletion or export all operational records.
 

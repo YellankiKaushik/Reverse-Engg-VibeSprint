@@ -23,7 +23,7 @@ There are **three unique credential values**: a Supabase publishable key (used u
 
 ## Optional variables
 
-All are optional. Omit them to use the documented defaults.
+All are optional. Omit them to use the documented defaults. `APP_ENV` is metadata and has no runtime effect. The application does not read `AI_GENERATION_ENABLED`; use `OPENROUTER_ENABLED=false` to disable live inference.
 
 | Exact name                              | Public/private            | Value/source and default                                                                  | Required | Environments | Shares a value? | Purpose                                                                       |
 | --------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------------ | --------------- | ----------------------------------------------------------------------------- |
@@ -38,7 +38,6 @@ All are optional. Omit them to use the documented defaults.
 | `AI_LIMIT_CLASSIFY_AND_CLARIFY_PER_DAY` | Server                    | Defaults to daily request limit                                                           | No       | Both         | No              | Intake operation limit                                                        |
 | `AI_LIMIT_GENERATE_PLAN_GRAPH_PER_DAY`  | Server                    | Defaults to daily request limit                                                           | No       | Both         | No              | Generation operation limit                                                    |
 | `AI_LIMIT_REPLAN_PER_DAY`               | Server                    | Defaults to daily request limit                                                           | No       | Both         | No              | Replanning operation limit                                                    |
-| `AI_GENERATION_ENABLED`                 | Server                    | `true`                                                                                    | No       | Both         | No              | Stops new AI operations when false; saved plans remain usable                 |
 | `SUPABASE_STORAGE_BUCKET`               | Server                    | `reversepath-files`                                                                       | No       | Both if used | No              | Existing Supabase file-storage adapter's bucket name                          |
 
 Local/test-only settings must stay out of deployed configuration:
