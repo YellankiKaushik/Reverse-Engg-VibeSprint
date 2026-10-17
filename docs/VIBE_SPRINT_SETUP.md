@@ -1,8 +1,10 @@
+> **Historical document — superseded by the OpenRouter-only cleanup on October 13, 2026.** Previous provider, account, project, deployment and environment instructions below are retained as history. Use [SIMPLE_ARCHITECTURE.md](SIMPLE_ARCHITECTURE.md), [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md), and [FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) for current setup and evidence. Do not use deleted-project credentials or replay historical deployment/migration instructions.
+
 # ReversePath Vibe Sprint setup
 
 ## Dedicated Supabase project
 
-**Current project is already created and migrated:** ReversePath, reference `kvytcttuskwwbmmmjjri`, Singapore, user's kaushikyellanki account. Use the authenticated CLI for this account; the connected MCP account differs. Four original migrations and one helper-permission security migration are applied. Do not create another project, run the bootstrap, or repeat initialization. Instructions below remain a reference for private configuration.
+**Current local target:** Reverse Engineering, reference `usvopldwiwzlvoqawvcu`, Tokyo, in Reverse Engg. The previous project was deleted. The connected Supabase tool verified the existing schema and applied the four missing migrations after explicit user approval, without CLI login. All eight migrations are recorded; real local plan saving, completion, progress, and refresh tests pass. See [localhost verification](REVERSEPATH_LOCALHOST_VERIFICATION.md) and the [release checklist](NEW_BACKEND_RELEASE_CHECKLIST.md). Do not run the legacy bootstrap or initialize the project again. Deployment waits for the user to replace Vercel environment values.
 
 1. Open https://supabase.com/dashboard and select **New project** in your own organization.
 2. Name it **ReversePath-VibeSprint**. Choose an available Asia region near your users and a strong database password. Keep the password private; the application does not need that password in `.env`.
@@ -25,7 +27,7 @@ Never place a secret/service-role key in any `VITE_*` variable. Never send crede
 
 ### Install the existing schema, only on the new empty project
 
-The four existing migrations define the schema, owner-scoped RLS, ownership triggers, and atomic plan activation. Static tests pass; the SQL has **not** been executed against a new project yet.
+The new project's schema is now complete. Its four base migrations were originally recorded under different timestamps from the repository; the four approved missing migrations are recorded under their actual application timestamps. Do not replay initial CREATE TABLE migrations, repair history to match filenames, or rerun the supplied SQL patch. The CLI workflow below is reference for future authorized changes, not required setup for this verified project.
 
 Preferred CLI workflow (inspect `npx supabase --help` and subcommand help before use):
 
@@ -37,7 +39,7 @@ npx supabase db push --dry-run
 
 Verify the linked reference matches the newly created project, then apply the reviewed migrations with `npx supabase db push`. Do not reset any remote database. CLI login/link/apply may require account interaction; ask the agent to continue after you provide the **reference ID**, not secrets.
 
-The legacy `supabase/FINAL_REMOTE_BOOTSTRAP.sql` mirrors only the four original migrations. Do not run it on the configured project; CLI migration history is authoritative, including the fifth helper-permission security migration. Never mix bootstrap execution with the applied CLI workflow.
+The legacy `supabase/FINAL_REMOTE_BOOTSTRAP.sql` mirrors only the four original migrations. Do not run it on the configured project; CLI migration history is authoritative, including the helper-permission and transactional execution/graph/check-in migrations. Never mix bootstrap execution with the applied CLI workflow.
 
 In Authentication / URL Configuration, allow `http://localhost:5173` and `http://127.0.0.1:4173` for local work; add the deployment origin when it exists. Keep email confirmation enabled if desired: signup now explains that email confirmation is required. Google sign-in requires configuring the Google provider separately; email sign-in is sufficient for the MVP.
 
@@ -59,7 +61,7 @@ The authenticated Golden Path honors `.env` AI mode and routes; with `mock`, it 
 
 Official docs: https://app.routerplus.com/docs/api-chat-completions and https://app.routerplus.com/docs/api-models.
 
-RouterPlus supports the existing OpenAI-compatible `/v1/chat/completions` adapter. Use an OpenAI-family model for `response_format: json_schema`; RouterPlus documents that Anthropic-translated routes reject that parameter. The public catalog at https://app.routerplus.com/api/models.json lists `gpt-6-luna` as of October 11, 2026; confirm the exact ID in the **authenticated** `/v1/models` response for your key before using it. No real RouterPlus request has been made for this application yet.
+RouterPlus supports the existing OpenAI-compatible `/v1/chat/completions` adapter. Use an OpenAI-family model for `response_format: json_schema`; RouterPlus documents that Anthropic-translated routes reject that parameter. The public catalog at https://app.routerplus.com/api/models.json lists `gpt-6-luna` as of October 11, 2026; confirm the exact ID in the **authenticated** `/v1/models` response for your key before using it. Real RouterPlus generation and replanning have passed locally and on the protected staged release; see the current readiness report.
 
 Configure privately:
 
@@ -110,7 +112,7 @@ The dedicated Vercel project already exists: `reversepath-vibesprint`, ID `prj_M
 
 After real integration passes, configure the environment names above privately for production and run a remote build/deployment. Use Node 24 (the tested runtime). Set Supabase's Site URL and `PUBLIC_APP_URL` to `https://reversepath-vibesprint.vercel.app`; allow that origin and the local test origins as authentication redirects. Provider keys and server Supabase secret must remain runtime secrets. `VITE_*` public values must be available at build time. `.vercelignore` excludes `.env` from source upload. User authorization covers safe updates to this existing deployment; preserve the working demo until the real hosted Golden Path passes.
 
-Do not deploy the current unconfigured build as a working authenticated/live product. An offline-only preview can be published only if explicitly approved and labelled as such. A successful local Vercel build is not proof of a working public deployment.
+The staged Production build now has verified live configuration. Public promotion is withheld because real email signup returns HTTP 429; see `REVERSEPATH_PRODUCTION_READINESS.md`. Do not describe the still-old public build as a verified live product. An offline-only preview can be published only if explicitly approved and labelled as such. A successful local Vercel build is not proof of a working public deployment.
 
 For any Node host:
 

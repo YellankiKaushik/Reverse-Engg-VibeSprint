@@ -1,147 +1,83 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
-    candidatesForAlias,
+    candidateForAlias,
     classifyAiError,
     isMockAiEnabled,
     maxProviderRetries,
-    routeForAlias,
+    maxOutputTokens,
     timeoutMs,
+    MODEL_ALIASES,
 } from "@/lib/ai-gateway.server";
 
-const originalEnv = { ...process.env };
-const aiEnvKeys = [
-    "AI_PROVIDER_MODE",
-    "AI_PROVIDER_ALLOWLIST",
-    "AI_ROUTE_FAST",
-    "AI_ROUTE_PRIMARY",
-    "AI_ROUTE_CRITIC",
-    "AI_ROUTE_FALLBACK",
-    "AI_PROVIDER_TIMEOUT_MS",
-    "AI_PROVIDER_MAX_RETRIES",
-    "GEMINI_ENABLED",
-    "GEMINI_API_KEY",
-    "GEMINI_MODEL_DEFAULT",
-    "GEMINI_MODEL_FAST",
-    "GEMINI_MODEL_PRIMARY",
-    "GEMINI_MODEL_CRITIC",
-    "GEMINI_MODEL_FALLBACK",
-    "GROQ_ENABLED",
-    "GROQ_API_KEY",
-    "GROQ_MODEL_DEFAULT",
-    "GROQ_MODEL_FAST",
-    "GROQ_MODEL_PRIMARY",
-    "GROQ_MODEL_CRITIC",
-    "GROQ_MODEL_FALLBACK",
-    "OPENROUTER_ENABLED",
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_MODEL_DEFAULT",
-    "OPENROUTER_MODEL_FAST",
-    "OPENROUTER_MODEL_PRIMARY",
-    "OPENROUTER_MODEL_CRITIC",
-    "OPENROUTER_MODEL_FALLBACK",
-    "OPENAI_ENABLED",
-    "OPENAI_API_KEY",
-    "OPENAI_BASE_URL",
-    "OPENAI_MODEL_DEFAULT",
-    "OPENAI_MODEL_FAST",
-    "OPENAI_MODEL_PRIMARY",
-    "OPENAI_MODEL_CRITIC",
-    "OPENAI_MODEL_FALLBACK",
-    "LOVABLE_AI_ENABLED",
-    "LOVABLE_API_KEY",
-    "LOVABLE_MODEL_DEFAULT",
-    "LOVABLE_MODEL_FAST",
-    "LOVABLE_MODEL_PRIMARY",
-    "LOVABLE_MODEL_CRITIC",
-    "LOVABLE_MODEL_FALLBACK",
-] as const;
+beforeEach(() => {
+    for (const name of [
+        "AI_PROVIDER_MODE",
+        "OPENROUTER_ENABLED",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_MODEL_DEFAULT",
+        "AI_PROVIDER_TIMEOUT_MS",
+        "AI_PROVIDER_MAX_RETRIES",
+        "AI_MAX_OUTPUT_TOKENS",
+    ])
+        vi.stubEnv(name, "");
+});
+afterEach(() => vi.unstubAllEnvs());
 
-function resetEnv() {
-    process.env = { ...originalEnv };
-    for (const key of aiEnvKeys) delete process.env[key];
-    vi.unstubAllEnvs();
-}
-
-describe("AI provider router", () => {
-    beforeEach(resetEnv);
-    afterEach(resetEnv);
-
-    it("uses free-first default routes without requiring paid OpenAI", () => {
-        expect(routeForAlias("FAST")).toEqual(["groq", "gemini", "openrouter", "openai"]);
-        expect(routeForAlias("PRIMARY")).toEqual(["gemini", "groq", "openrouter", "openai"]);
-    });
-
-    it("builds candidates only for enabled providers with keys and configured models", () => {
-        vi.stubEnv("GROQ_API_KEY", "test-groq-key");
-        vi.stubEnv("GROQ_MODEL_FAST", "groq-test-model");
-        vi.stubEnv("GEMINI_API_KEY", "test-gemini-key");
-        vi.stubEnv("GEMINI_MODEL_FAST", "gemini-test-model");
-
-        const candidates = candidatesForAlias("FAST");
-
-        expect(candidates.map((candidate) => candidate.providerId)).toEqual(["groq", "gemini"]);
-        expect(candidates.map((candidate) => candidate.modelId)).toEqual([
-            "groq-test-model",
-            "gemini-test-model",
-        ]);
-    });
-
-    it("honors provider allowlist as the privacy boundary for fallback", () => {
-        vi.stubEnv("AI_PROVIDER_ALLOWLIST", "gemini");
-        vi.stubEnv("AI_ROUTE_PRIMARY", "gemini,openrouter,openai");
-        vi.stubEnv("GEMINI_API_KEY", "test-gemini-key");
-        vi.stubEnv("GEMINI_MODEL_PRIMARY", "gemini-test-model");
-        vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
-        vi.stubEnv("OPENROUTER_MODEL_PRIMARY", "openrouter-test-model");
-
-        expect(candidatesForAlias("PRIMARY").map((candidate) => candidate.providerId)).toEqual([
-            "gemini",
-        ]);
-    });
-
-    it("supports deterministic mock mode for no-cost automated tests", () => {
-        vi.stubEnv("AI_PROVIDER_MODE", "mock");
-        vi.stubEnv("GROQ_API_KEY", "test-groq-key");
-        vi.stubEnv("GROQ_MODEL_FAST", "groq-test-model");
-
+describe("OpenRouter configuration", () => {
+    it("defaults to no-cost mock AI and fails closed on invalid modes", () => {
         expect(isMockAiEnabled()).toBe(true);
-        expect(candidatesForAlias("FAST")).toEqual([]);
+        vi.stubEnv("AI_PROVIDER_MODE", "typo");
+        expect(candidateForAlias("PRIMARY")).toBeUndefined();
     });
-
-    it("does not call other providers when an explicit allowlist contains a typo", () => {
-        vi.stubEnv("AI_PROVIDER_ALLOWLIST", "routerplus");
-        vi.stubEnv("OPENAI_API_KEY", "test-key");
-        vi.stubEnv("OPENAI_MODEL_DEFAULT", "test-model");
-        expect(candidatesForAlias("PRIMARY")).toEqual([]);
+    it("uses one OpenRouter model for all roles", () => {
+        vi.stubEnv("AI_PROVIDER_MODE", "live");
+        vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
+        vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test/model");
+        for (const alias of MODEL_ALIASES) {
+            const candidate = candidateForAlias(alias);
+            expect(candidate?.providerId).toBe("openrouter");
+            expect(candidate?.modelId).toBe("test/model");
+            expect(candidate?.modelAlias).toBe(alias);
+        }
     });
-
-    it("uses the default model when role-specific values in .env.example are empty", () => {
-        vi.stubEnv("OPENAI_ENABLED", "true");
-        vi.stubEnv("OPENAI_API_KEY", "test-routerplus-key");
+    it("requires both the OpenRouter key and model", () => {
+        vi.stubEnv("AI_PROVIDER_MODE", "live");
+        expect(candidateForAlias("FAST")).toBeUndefined();
+        vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
+        expect(candidateForAlias("FAST")).toBeUndefined();
+    });
+    it("respects explicit disable and mock mode", () => {
+        vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
+        vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test/model");
+        expect(candidateForAlias("FAST")).toBeUndefined();
+        vi.stubEnv("AI_PROVIDER_MODE", "live");
+        vi.stubEnv("OPENROUTER_ENABLED", "false");
+        expect(candidateForAlias("FAST")).toBeUndefined();
+    });
+    it("never falls back to legacy provider credentials or endpoints", () => {
+        vi.stubEnv("AI_PROVIDER_MODE", "live");
+        vi.stubEnv("OPENAI_API_KEY", "test-legacy-key");
         vi.stubEnv("OPENAI_BASE_URL", "https://api.routerplus.com/v1");
-        vi.stubEnv("OPENAI_MODEL_DEFAULT", "test-model");
-        vi.stubEnv("OPENAI_MODEL_FAST", "");
         vi.stubEnv("AI_PROVIDER_ALLOWLIST", "openai");
-        const [candidate] = candidatesForAlias("FAST");
-        expect(candidate?.providerId).toBe("openai");
-        expect(candidate?.modelId).toBe("test-model");
+        expect(candidateForAlias("PRIMARY")).toBeUndefined();
     });
-
-    it("bounds timeout and retry configuration", () => {
-        vi.stubEnv("AI_PROVIDER_TIMEOUT_MS", "2500");
+    it("bounds timeout, retry and output budgets", () => {
+        expect(maxProviderRetries()).toBe(0);
+        expect(maxOutputTokens()).toBe(12000);
+        vi.stubEnv("AI_PROVIDER_TIMEOUT_MS", "999999");
         vi.stubEnv("AI_PROVIDER_MAX_RETRIES", "12");
-
-        expect(timeoutMs()).toBe(2500);
+        vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "999999");
+        expect(timeoutMs()).toBe(300000);
         expect(maxProviderRetries()).toBe(3);
+        expect(maxOutputTokens()).toBe(16384);
     });
-
-    it("classifies provider errors for fallback decisions", () => {
+    it("keeps actionable errors without leaking provider details", () => {
         expect(classifyAiError({ status: 429 }).code).toBe("AI_RATE_LIMITED");
-        expect(classifyAiError({ message: "invalid JSON parse failed" }).code).toBe(
-            "AI_SCHEMA_INVALID",
-        );
+        expect(classifyAiError({ message: "invalid JSON" }).code).toBe("AI_SCHEMA_INVALID");
         expect(classifyAiError({ name: "AbortError" }).code).toBe("AI_PROVIDER_TIMEOUT");
-        expect(classifyAiError({ status: 403 }).code).toBe("AI_POLICY_REJECTED");
+        expect(classifyAiError({ status: 401 }).retryable).toBe(false);
+        expect(classifyAiError({ message: "private provider detail" }).message).not.toContain(
+            "private provider detail",
+        );
     });
 });

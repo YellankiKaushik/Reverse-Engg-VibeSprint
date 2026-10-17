@@ -45,34 +45,16 @@ export const editAction = createServerFn({ method: "POST" })
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
 
-        const { error } = await supabase
-            .from("plan_nodes")
-            .update({ title: data.title, description: data.description })
-            .eq("id", data.nodeId)
-            .eq("user_id", userId);
-        if (error) throw new Error(error.message);
-
-        const existing = await supabase
-            .from("actions")
-            .select("revision")
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (existing.error)
-            throw new Error(`Action details could not be loaded: ${existing.error.message}`);
-        if (!existing.data) throw new Error("That action could not be found.");
-
-        const actionEdit = await supabase
-            .from("actions")
-            .update({
-                completion_criteria: data.completionCriteria,
-                estimated_minutes: data.estimatedMinutes,
-                revision: (existing.data?.revision ?? 1) + 1,
-            })
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId);
-        if (actionEdit.error)
-            throw new Error(`Action details could not be saved: ${actionEdit.error.message}`);
+        const { error } = await supabase.rpc("update_execution_node", {
+            target_node_id: data.nodeId,
+            patch: {
+                title: data.title,
+                description: data.description,
+                completionCriteria: data.completionCriteria,
+                estimatedMinutes: data.estimatedMinutes,
+            },
+        });
+        if (error) throw new Error(`Action details could not be saved: ${error.message}`);
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({
@@ -114,42 +96,15 @@ export const submitCheckIn = createServerFn({ method: "POST" })
             .parse(input),
     )
     .handler(async ({ data, context }) => {
-        const { supabase, userId } = context;
+        const { supabase } = context;
 
-        const plan = await supabase
-            .from("plans")
-            .select("id, case_id")
-            .eq("id", data.planId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (plan.error) throw new Error(`That plan could not be loaded: ${plan.error.message}`);
-        if (!plan.data) throw new Error("That plan could not be found.");
-        const planRow = plan.data;
-
-        const { error } = await supabase.from("check_ins").insert({
-            user_id: userId,
-            plan_id: data.planId,
-            note: data.note || null,
+        const { error } = await supabase.rpc("save_plan_check_in", {
+            target_plan_id: data.planId,
+            note: data.note,
             progress_rating: data.progressRating,
             changed_facts: data.changedFacts,
         });
-        if (error) throw new Error(error.message);
-
-        if (data.changedFacts.length > 0) {
-            const factsUpdate = await supabase.from("case_context_facts").insert(
-                data.changedFacts.map((f) => ({
-                    user_id: userId,
-                    case_id: planRow.case_id,
-                    category: f.category,
-                    key: f.key,
-                    value: { answer: f.value },
-                    source: "CHECK_IN",
-                    confidence: 1,
-                })),
-            );
-            if (factsUpdate.error)
-                throw new Error(`Changed context could not be saved: ${factsUpdate.error.message}`);
-        }
+        if (error) throw new Error(`Check-in could not be saved: ${error.message}`);
 
         return {
             ok: true,

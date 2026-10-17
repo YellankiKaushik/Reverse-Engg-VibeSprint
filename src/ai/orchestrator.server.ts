@@ -7,10 +7,11 @@ import { generateObject } from "ai";
 import type { z } from "zod";
 
 import {
-    candidatesForAlias,
+    candidateForAlias,
     classifyAiError,
     isMockAiEnabled,
     maxProviderRetries,
+    maxOutputTokens,
     timeoutMs,
     type AiAttemptTelemetry,
     type ModelAlias,
@@ -90,10 +91,10 @@ async function callModel<S extends z.ZodType>(args: {
         };
     }
 
-    const candidates = candidatesForAlias(args.alias);
-    if (candidates.length === 0) {
+    const candidate = candidateForAlias(args.alias);
+    if (!candidate) {
         const enriched = new Error(
-            "AI is temporarily unavailable because no enabled provider has both a server-side key and configured model.",
+            "AI is unavailable. Configure OPENROUTER_API_KEY and OPENROUTER_MODEL_DEFAULT on the server.",
         ) as Error & {
             code: string;
             retryable: boolean;
@@ -121,65 +122,65 @@ async function callModel<S extends z.ZodType>(args: {
     const attempts: AiAttemptTelemetry[] = [];
     let lastFailure = classifyAiError(new Error("AI is temporarily unavailable."));
 
-    for (const candidate of candidates) {
-        for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
-            const attemptStarted = Date.now();
-            try {
-                const result = await generateObject({
-                    model: candidate.model,
-                    schema: args.schema,
-                    system: args.system,
-                    prompt: args.prompt,
-                    maxRetries: 0,
-                    abortSignal: AbortSignal.timeout(timeoutMs()),
-                });
+    for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
+        const attemptStarted = Date.now();
+        try {
+            const result = await generateObject({
+                model: candidate.model,
+                schema: args.schema,
+                system: args.system,
+                prompt: args.prompt,
+                providerOptions: { openrouter: { provider: { require_parameters: true } } },
+                maxRetries: 0,
+                maxOutputTokens: maxOutputTokens(),
+                abortSignal: AbortSignal.timeout(timeoutMs()),
+            });
 
-                attempts.push({
+            attempts.push({
+                provider: candidate.providerName,
+                modelAlias: candidate.modelAlias,
+                modelId: candidate.modelId,
+                attempt,
+                latencyMs: Date.now() - attemptStarted,
+                outcome: "SUCCESS",
+                retryable: false,
+            });
+
+            return {
+                data: args.schema.parse(result.object),
+                meta: {
+                    operation: args.operation,
                     provider: candidate.providerName,
-                    modelAlias: candidate.modelAlias,
-                    modelId: candidate.modelId,
-                    attempt,
-                    latencyMs: Date.now() - attemptStarted,
+                    modelAlias: args.alias,
+                    providerModel: candidate.modelId,
+                    promptVersion: PROMPT_VERSION,
+                    latencyMs: Date.now() - started,
+                    inputTokens: result.usage?.inputTokens ?? null,
+                    outputTokens: result.usage?.outputTokens ?? null,
                     outcome: "SUCCESS",
-                    retryable: false,
-                });
-
-                return {
-                    data: args.schema.parse(result.object),
-                    meta: {
-                        operation: args.operation,
-                        provider: candidate.providerName,
-                        modelAlias: args.alias,
-                        providerModel: candidate.modelId,
-                        promptVersion: PROMPT_VERSION,
-                        latencyMs: Date.now() - started,
-                        inputTokens: result.usage?.inputTokens ?? null,
-                        outputTokens: result.usage?.outputTokens ?? null,
-                        outcome: "SUCCESS",
-                        schemaValid: true,
-                        correlationId: args.correlationId,
-                        attempts,
-                    },
-                };
-            } catch (error) {
-                lastFailure = classifyAiError(error);
-                attempts.push({
-                    provider: candidate.providerName,
-                    modelAlias: candidate.modelAlias,
-                    modelId: candidate.modelId,
-                    attempt,
-                    latencyMs: Date.now() - attemptStarted,
-                    outcome: lastFailure.code,
-                    retryable: lastFailure.retryable,
-                });
-                if (!lastFailure.retryable) break;
-            }
+                    schemaValid: true,
+                    correlationId: args.correlationId,
+                    attempts,
+                },
+            };
+        } catch (error) {
+            lastFailure = classifyAiError(error);
+            attempts.push({
+                provider: candidate.providerName,
+                modelAlias: candidate.modelAlias,
+                modelId: candidate.modelId,
+                attempt,
+                latencyMs: Date.now() - attemptStarted,
+                outcome: lastFailure.code,
+                retryable: lastFailure.retryable,
+            });
+            if (!lastFailure.retryable) break;
         }
     }
 
     const enriched = new Error(
         lastFailure.retryable
-            ? "AI is temporarily unavailable after trying every configured provider. Saved plans still work."
+            ? "AI is temporarily unavailable after the configured attempts. Saved plans still work."
             : lastFailure.message,
     ) as Error & {
         code: string;

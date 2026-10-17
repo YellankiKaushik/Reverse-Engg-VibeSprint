@@ -66,11 +66,5 @@ export class SupabaseObjectStorage implements ObjectStorage {
 }
 
 export function createObjectStorage(supabase: SupabaseClient): ObjectStorage {
-    const provider = process.env["OBJECT_STORAGE_PROVIDER"] ?? "supabase";
-    if (provider !== "supabase") {
-        throw new Error(
-            "Only Supabase Storage is implemented for the MVP. Large-object adapters can be added later.",
-        );
-    }
     return new SupabaseObjectStorage(supabase);
 }

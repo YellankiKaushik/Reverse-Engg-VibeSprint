@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("prepared demo unlocks tasks and persists completion after refresh", async ({ page }) => {
     const errors: string[] = [];

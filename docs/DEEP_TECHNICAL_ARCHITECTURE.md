@@ -1,3 +1,5 @@
+> **Historical document — superseded by the OpenRouter-only cleanup on October 13, 2026.** Previous provider, account, project, deployment and environment instructions below are retained as history. Use [SIMPLE_ARCHITECTURE.md](SIMPLE_ARCHITECTURE.md), [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md), and [FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) for current setup and evidence. Do not use deleted-project credentials or replay historical deployment/migration instructions.
+
 ﻿# Deep Technical Architecture & Engineering Documentation
 
 **Document type:** Master Technical Architecture / Engineering Design Document  
@@ -19,6 +21,10 @@
 > [REQUIRED] No production system exists yet. All component, API, data, SLO, security, deployment, and operations sections below define the **target MVP architecture**. Claims requiring evidence are explicitly marked TBD rather than fabricated. After Lovable generates the codebase, this document MUST be reconciled against the actual repository, migrations, configuration, tests, deployment, and monitoring.
 
 ---
+
+## Current release evidence - October 13, 2026
+
+The original target design below is historical. The current implementation uses React/TanStack Start, Supabase and the existing RouterPlus gateway. Graph persistence, execution edits, activation, check-ins and strategy selection are transactional; eight migrations are applied to the dedicated ReversePath database. The hardened staged Production deployment passed the real Golden Path and three planning scenarios. Public promotion remains blocked by email signup rate limiting. [REVERSEPATH_PRODUCTION_READINESS.md](REVERSEPATH_PRODUCTION_READINESS.md) is authoritative for current architecture, tests, deployment state and limitations.
 
 ## Implementation Reconciliation Note
 
