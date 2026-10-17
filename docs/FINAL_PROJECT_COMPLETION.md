@@ -4,6 +4,66 @@ October 17, 2026 — Asia/Calcutta.
 
 **REVERSEPATH FINALIZATION BLOCKED**
 
+## Latest Production-only attempt — October 17, 2026
+
+GitHub finalization remains complete: only main exists. The source built for this attempt was `00c0049454ecdb6a9e5ca407ff57609736546f15`. No branch was created or merged, no application implementation was changed, and no new architecture or provider was introduced. Only this release-status documentation is updated afterward.
+
+| Required release check            | Actual result                             | Fresh evidence                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase redirects                | **BLOCKED**                               | Production and `http://127.0.0.1:4173` retain their requested destinations. Both tested Preview origins still resolve to the Production origin.                                                                                                                                                                                           |
+| Real signup email                 | **BLOCKED — EMAIL_VERIFICATION_BLOCKED**  | No authorized mailbox template/inbox was available. No signup email was sent and no inbox receipt is claimed.                                                                                                                                                                                                                             |
+| Production environment            | **PASS**                                  | All eight actual Production variables privately verified in memory: correct Supabase reference, matching public/server URLs and publishable keys, expected server/OpenRouter credentials, `AI_PROVIDER_MODE=live`, and `OPENROUTER_MODEL_DEFAULT=openai/gpt-4.1-mini`. No secret values or secret-bearing env files were printed/written. |
+| Production-configured local build | **PASS**                                  | Main built successfully with isolated Production environment values; config and real OpenRouter key/catalog checks passed without inference. This was a local Vercel-target build, not a deployed candidate.                                                                                                                              |
+| Staged Production candidate       | **BLOCKED**                               | Automatic approval review rejected `vercel deploy --prod --skip-domain` before execution because creating a Production deployment can change project state while signup acceptance remains blocked. No alternative deployment mechanism was used to bypass that decision.                                                                 |
+| Production deployment/promotion   | **BLOCKED**                               | No new Production deployment was created or promoted; the existing public alias and rollback baseline are preserved.                                                                                                                                                                                                                      |
+| Public browser release acceptance | **BLOCKED for the intended main release** | Five fresh browser checks pass on the retained public baseline, but main is not deployed. Full new-release public AI/execution/replanning/cross-user acceptance was therefore not claimed.                                                                                                                                                |
+
+### Exact Supabase redirect evidence and required change
+
+The existing application credentials identify the intended NEW project, **Reverse Engineering**, reference `usvopldwiwzlvoqawvcu`.
+
+Fresh generated signup-link destinations, with tokens withheld:
+
+- Requested `https://reversepath-vibesprint.vercel.app` → same Production origin: **PASS**.
+- Requested `https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app` → `https://reversepath-vibesprint.vercel.app`: **BLOCKED**.
+- Requested the older `https://reversepath-vibesprint-4nqt9wyek-kaushik-yellanki-project.vercel.app` → Production: **BLOCKED**.
+- Requested `http://127.0.0.1:4173` → same local origin: **PASS**.
+
+The connected Supabase integration does not expose the intended project, no management token is configured, and direct dashboard navigation reaches sign-in. Therefore the literal Site URL/allowlist settings could not be inspected or changed through an authenticated management connection. Production redirect behavior passes, but that is not represented as a direct read of the Site URL field.
+
+In [the intended project's Authentication → URL Configuration](https://supabase.com/dashboard/project/usvopldwiwzlvoqawvcu/auth/url-configuration), confirm Site URL is exactly `https://reversepath-vibesprint.vercel.app`. Preserve the Production and necessary localhost redirect entries. Add both of these Redirect URLs so the application's bare-origin redirect and nested callbacks are covered:
+
+```text
+https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app
+https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app/**
+```
+
+Keep any still-required older Preview entry; do not change unrelated policies or disable confirmation. Re-run generated-link checks after saving. No Auth setting was modified in this attempt.
+
+**One mailbox action:** Sign up once with a disposable address in an inbox you control, verify actual receipt and the allowed confirmation destination, follow the link, then verify login/logout and session persistence.
+
+### Public baseline tests and security checks
+
+The public URL itself, `https://reversepath-vibesprint.vercel.app`, was tested rather than substituting localhost or Preview. Browser results: **5 passed, 0 failed, 0 skipped** — landing availability, signed-out protected-route redirect, genuine generated-link confirmation with session reload/password reauthentication/logout, prepared-demo persistence, and narrow-mobile demo behavior. The generated-link test created and cleaned up one disposable account; it sent no SMTP email and is not public-signup inbox-delivery evidence.
+
+The public baseline client scan inspected **20 HTML/JavaScript responses**: correct Supabase reference; zero current-private-value/pattern findings, page errors, failed requests, or server errors. The recent Production deployment-scoped error query returned no records in its bounded 30-minute window. The local source/generated-client scanner reported **zero findings** across 180 source candidates and 42 client assets. The confirmation/history audit scanned 23 reachable commits with zero findings.
+
+New paid AI inference in this attempt: **0 calls, $0**. Fresh real key/model capability checking and previous real-AI Preview evidence are distinguished from a new public release test. Full goal/planning/execution/replanning/mobile-plan/cross-user tests against the intended public main release remain pending because that release was not deployed.
+
+The first CLI environment attempt was contaminated by the CLI's documented-in-code local `.env` precedence and reported local mock mode. It was not treated as Production configuration evidence. The successful read used a clean ignored CLI context containing only the existing project link and removed inherited application overrides before privately loading Production values; the actual hosted mode is live. No hosted environment variable was changed.
+
+### Retained deployments and remaining approval
+
+- Final intended public URL: https://reversepath-vibesprint.vercel.app
+- Current public Production source commit: `5ee686dc58aa1d4fc6bbfc959a6bc89280929736` — **not** the current main release.
+- Current Production and preserved rollback deployment: `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, https://reversepath-vibesprint-6jn9r9fiu-kaushik-yellanki-project.vercel.app.
+- Retained verified Preview: `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH`, source `e77ad37a5c3b910fe23f3090dac0f4079419af19`.
+- Existing Vercel project remains `reversepath-vibesprint`; its Git link is absent. Production and Preview identities were rechecked and unchanged. No automatic deployment was introduced.
+
+After the redirect and real-inbox gates pass, approval is still needed for the staged Production deployment rejected by automatic review. Its stated risk was changing Production project state before signup acceptance, even with `--skip-domain`. Then test the actual staged Production candidate, promote only after acceptance/security pass, and verify the public main release. No claim of full Production completion is made.
+
+The earlier audit sections below remain useful evidence but do not override this latest status.
+
 **Subsequent GitHub-only finalization:** The owner explicitly authorized source-control finalization independently of Production signup acceptance. [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) was normally merged, all source was verified on main, and stabilization was safely deleted locally/remotely. Main is now the only source branch. No Production deployment occurred. [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) supersedes the GitHub blockers and branch-state descriptions in the earlier audit below; Production acceptance remains blocked.
 
 The application candidate passed fresh automated, local browser, and hosted real-AI verification. Production promotion remains withheld because required signup acceptance is incomplete. Source-control finalization was subsequently authorized independently and completed through PR #1 with a normal merge and safe branch cleanup. No skipped or unperformed check is treated as a pass.
