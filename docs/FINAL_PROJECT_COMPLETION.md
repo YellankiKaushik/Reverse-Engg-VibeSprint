@@ -4,7 +4,9 @@ October 17, 2026 — Asia/Calcutta.
 
 **REVERSEPATH FINALIZATION BLOCKED**
 
-The application candidate passed fresh automated, local browser, and hosted real-AI verification. Production promotion, the main merge, and branch deletion remain withheld because required signup acceptance is incomplete. GitHub PR creation also returned an integration-permission error. No skipped or unperformed check is treated as a pass.
+**Subsequent GitHub-only finalization:** The owner explicitly authorized source-control finalization independently of Production signup acceptance. [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) was normally merged, all source was verified on main, and stabilization was safely deleted locally/remotely. Main is now the only source branch. No Production deployment occurred. [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) supersedes the GitHub blockers and branch-state descriptions in the earlier audit below; Production acceptance remains blocked.
+
+The application candidate passed fresh automated, local browser, and hosted real-AI verification. Production promotion remains withheld because required signup acceptance is incomplete. Source-control finalization was subsequently authorized independently and completed through PR #1 with a normal merge and safe branch cleanup. No skipped or unperformed check is treated as a pass.
 
 ## Application and source
 
@@ -93,13 +95,13 @@ Verified Preview: https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-proj
 
 Production/rollback baseline: `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, https://reversepath-vibesprint-6jn9r9fiu-kaushik-yellanki-project.vercel.app, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`. Public URL: https://reversepath-vibesprint.vercel.app. The baseline was retained. No Production candidate was promoted while acceptance gates remained blocked.
 
-Repository: https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint. Verified fixes are pushed to stabilization. PR creation returned HTTP 403, `Resource not accessible by integration`; repository metadata access and Git push work, but they do not prove PR-write permission. Commit status and pull-request workflow queries returned empty lists. No PR was created, no merge occurred, and no unmerged branch was removed. Both `main` and `codex/production-stabilization` remain. The active branch stays stabilization to preserve unfinished release work. PR text is prepared in `REVERSEPATH_RELEASE_PR.md`.
+Repository: https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint. The initial audit's PR attempt returned HTTP 403, `Resource not accessible by integration`. Under subsequent explicit GitHub-only authorization, the owner's existing Git credentials created and normally merged [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1). Main was verified to preserve the entire source tip before stabilization was deleted locally and remotely. Main is now the only source branch and the active local branch. The merge triggered no Production deployment; full details are in `GITHUB_FINALIZATION_REPORT.md`.
 
 ## Remaining manual actions
 
 1. In the existing Supabase project's Auth redirect allowlist, allow both the required older Preview origin and the current candidate origin. Production Site URL now behaves correctly; do not restore the old localhost fallback or disable confirmation.
 2. Use a unique disposable address in an inbox you control to register once on the intended release site. Confirm actual receipt, inspect the destination origin, follow the link, verify dashboard/password login, then logout/login. Record this evidence or explicitly address the email acceptance requirement as project owner. Generated admin links do not satisfy inbox delivery.
-3. Grant the GitHub integration PR-write access to this repository, or create the prepared draft PR through your GitHub account. After signup acceptance passes, verify a staged Production build, promote it, smoke-test the public domain, then merge main with history preserved. Only delete stabilization after confirming all intended commits are preserved and the resulting main deployment is correct.
+3. After signup acceptance passes, verify a staged Production build from the finalized main source, promote it, and smoke-test the public domain. GitHub merging and branch cleanup are already complete; no additional integration permission is required for the finished PR operation.
 
 ## Known limitations and future improvements
 
@@ -107,4 +109,4 @@ Replanning retains previous version history but creates new pending nodes; it do
 
 **FUTURE IMPROVEMENTS:** Google OAuth provider setup, new features or redesigns, uploads, extra analytics/monitoring, additional AI providers, optional refactoring/developer-experience cleanup, licensing decisions, and new CI infrastructure are deliberately deferred. Existing deprecation/Fast Refresh/cancellation warnings can be addressed separately. No optional enhancement was used as a release gate.
 
-Local sanitized evidence and screenshots are under ignored `logs/final-qa/`. Production release and GitHub-main finalization are incomplete until the listed gates pass.
+Local sanitized evidence and screenshots are under ignored `logs/final-qa/`. GitHub-main finalization is complete; Production release remains incomplete until its listed acceptance gates pass.

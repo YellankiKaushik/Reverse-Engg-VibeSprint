@@ -1,5 +1,7 @@
 # Prepared draft pull request: Finalize ReversePath OpenRouter release and verification
 
+> **Historical prepared text:** The later authorized release PR was [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1), titled `Release ReversePath MVP — Supabase, OpenRouter, Full Application`. It was normally merged into main and stabilization was safely removed after preservation checks. Production remains unchanged. See [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md); the draft/gating instructions below describe the preceding audit, not the current GitHub state.
+
 The app now uses Supabase for auth/data/storage and OpenRouter as its only live AI service. All planning roles use one model, private keys remain server-side, and native Vite/Nitro builds replace unused hosting/auth integrations. The shared configuration template and Vercel checklist remove obsolete provider routes, model overrides and test credentials while preserving validated graph persistence, completion, progress and replanning.
 
 October 17 candidate `e77ad37a5c3b910fe23f3090dac0f4079419af19` is deployed to the existing project's new Preview and passed fresh real OpenRouter planning/replanning, strategy switching, action start/completion, persistence, history, owner isolation, and desktop/mobile workspace tests. Export failures now prevent partial downloads; duplicate strategy keys fail graph validation. Regression tests cover both.

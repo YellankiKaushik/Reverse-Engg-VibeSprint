@@ -1,10 +1,12 @@
 # Final configuration report
 
+> **Subsequent GitHub update:** [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) merged the verified source into main; stabilization was safely removed. Main is the only source branch. No Production release accompanied the merge. See [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) for the latest source-control state; earlier GitHub blockers below are historical.
+
 ## Current snapshot — October 17, 2026
 
 Fresh application configuration checks and the real OpenRouter key/model capability check pass. The eight required Vercel variables are present on shared Preview/Production entries without branch overrides. Hosted Preview behavior confirms Supabase project `usvopldwiwzlvoqawvcu`, live OpenRouter, and `openai/gpt-4.1-mini`. There is no new provider or project.
 
-Application candidate `e77ad37a5c3b910fe23f3090dac0f4079419af19` is pushed and deployed to READY Preview `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH`. The prior Production deployment is retained. Production promotion and the main merge are withheld pending signup acceptance. Production redirect generation passes; both tested Preview origins still fall back to Production; real inbox delivery is unverified. GitHub PR creation returned HTTP 403 `Resource not accessible by integration`.
+Application candidate `e77ad37a5c3b910fe23f3090dac0f4079419af19` is deployed to READY Preview `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH` and its verified source is now preserved on main through PR #1. The prior Production deployment is retained; Production promotion remains withheld pending signup acceptance. Production redirect generation passes; both tested Preview origins still fall back to Production; real inbox delivery is unverified. The GitHub integration's HTTP 403 was resolved for this operation by using the owner's existing authorized Git credentials without changing integration permissions.
 
 Fresh checks: 56 automated passes/one optional skip, 14 local browser passes/five skips, both build targets, TypeScript, lint with zero errors/six existing warnings, zero npm audit vulnerabilities, and no source/client/history secret findings. Hosted acceptance and detailed feature evidence are recorded in [FINAL_PROJECT_COMPLETION.md](FINAL_PROJECT_COMPLETION.md) and [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
 

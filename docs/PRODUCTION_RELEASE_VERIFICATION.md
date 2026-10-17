@@ -1,15 +1,17 @@
 # Production release verification
 
+> **GitHub status update:** Subsequent explicit GitHub-only authorization permitted [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) to be normally merged into main and the preserved stabilization branch to be removed. [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) supersedes this report's earlier GitHub-access/merge blockers. No automatic deployment path was configured and Production remains unchanged. Signup and Production acceptance gates below still apply.
+
 ## Current verification — October 17, 2026
 
-**REVERSEPATH FINALIZATION BLOCKED — APPLICATION PREVIEW VERIFIED; SIGNUP ACCEPTANCE AND GITHUB PR ACCESS REMAIN OPEN.**
+**PRODUCTION RELEASE BLOCKED — APPLICATION PREVIEW VERIFIED; SIGNUP ACCEPTANCE REMAINS OPEN.**
 
 - Candidate: `e77ad37a5c3b910fe23f3090dac0f4079419af19`, pushed on `codex/production-stabilization`.
 - Fresh Preview: https://reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app, `dpl_7wig7xrzUDR8dVmdggHw2QpbarkH`, READY, Node 24. Vercel deployment metadata confirms the candidate SHA and branch.
-- Production/rollback remains `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`; public domain https://reversepath-vibesprint.vercel.app. No promotion or main merge occurred.
+- Production/rollback remains `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`; public domain https://reversepath-vibesprint.vercel.app. No promotion occurred. The separately authorized GitHub merge is recorded in `GITHUB_FINALIZATION_REPORT.md`.
 - Production confirmation redirect now passes. The old required Preview and the new candidate Preview both fall back to the Production origin, not localhost. Their hosted callback acceptance is blocked until their exact origins are allowed.
 - **EMAIL_DELIVERY_VERIFICATION: BLOCKED.** No authorized inbox was available. Generated confirmation links, admin-confirmed test accounts, and intercepted signup responses do not establish actual inbox delivery.
-- GitHub PR creation: HTTP 403 `Resource not accessible by integration`. Branch push works; no PR URL exists. Prepared text is in `REVERSEPATH_RELEASE_PR.md`.
+- GitHub: [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) was created and normally merged using existing authorized Git credentials after the integration returned HTTP 403. Stabilization was safely removed; main is the only source branch.
 
 Fresh local results: environment/model checks, TypeScript, lint (zero errors, six existing warnings), **56 automated passes/one optional skip**, **14 local browser passes/five skips**, both build targets, zero audit vulnerabilities, and no source/generated-client/history secret findings. All 19 user-data server functions declare authentication middleware; real database tests cover ownership, isolation, rollback, prerequisites, and concurrency.
 
