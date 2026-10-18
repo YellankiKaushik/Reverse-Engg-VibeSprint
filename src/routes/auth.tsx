@@ -42,7 +42,7 @@ function AuthPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!loading && session) navigate({ to: "/" });
+        if (!loading && session) navigate({ to: "/", replace: true });
     }, [loading, session, navigate]);
 
     async function submit(event: React.FormEvent) {
@@ -86,11 +86,13 @@ function AuthPage() {
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
-                options: { redirectTo: window.location.origin },
+                options: { redirectTo: new URL("/auth", window.location.origin).href },
             });
             if (error) throw error;
-        } catch (error) {
-            toast.error((error as Error).message || "Google sign-in failed.");
+        } catch {
+            setSubmitError(
+                "Google sign-in could not be started. Please try again or contact support.",
+            );
         } finally {
             setBusy(false);
         }
@@ -108,6 +110,11 @@ function AuthPage() {
                 </p>
 
                 <div className="panel mt-6 p-5">
+                    {loading ? (
+                        <p role="status" className="mb-4 text-sm text-muted-foreground">
+                            Restoring your session…
+                        </p>
+                    ) : null}
                     {submitError || authError ? (
                         <p role="alert" className="mb-4 text-sm text-destructive">
                             {submitError || authError}
