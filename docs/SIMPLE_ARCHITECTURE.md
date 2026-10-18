@@ -1,90 +1,27 @@
 # ReversePath: simple architecture
 
-ReversePath turns a goal into a structured plan, shows its prerequisites and next actions, and records progress and revised plans. It uses three external services: Supabase, OpenRouter, and Vercel. React and TanStack Start remain the application framework; Nitro produces the existing Node or Vercel server build.
-
-## How requests work
+The verified migration uses **Supabase for authentication/data, direct Gemini for AI, and Vercel for hosting**. React, TanStack Start and Nitro remain the framework/runtime. The real Free Tier Golden Path passed locally. Hosted deployment awaits the owner’s manual Vercel environment update and confirmation.
 
 ```mermaid
 flowchart LR
-    B[React browser] -->|Supabase sign-in| S[Supabase Auth]
-    B -->|JWT on server-function requests| F[TanStack server functions]
-    F -->|user JWT and RLS| D[Supabase PostgreSQL / Storage]
-    F -->|server-only API key| A[OpenRouter]
-    A -->|structured proposal| F
-    F -->|validated graph transaction| D
+    Browser[React browser] --> Auth[Supabase Auth]
+    Browser -->|user JWT| Server[TanStack server functions]
+    Server -->|user client and RLS| DB[Supabase PostgreSQL]
+    Server -->|server-only key and JSON schema| AI[Direct Gemini Developer API]
+    AI --> Validate[Zod and graph validation]
+    Validate -->|atomic graph transaction| DB
 ```
 
-The browser displays goals, plan graphs, milestones, strategies, actions, progress, and version review. It uses TanStack Query for request state and Supabase's session in local storage. Email/password and optional Google OAuth go directly through Supabase. No external auth broker is used. Local fonts keep the existing appearance without runtime font-service requests.
+The browser never calls Gemini or receives its API key. Middleware validates Supabase JWT claims and creates the user-scoped client. RLS, ownership triggers, action prerequisites and atomic graph/version/progress operations are unchanged. Server secrets are reserved for trusted quotas, idempotency and telemetry; ordinary data uses the user's client.
 
-Supabase owns users and persistent data. Server middleware validates the user's JWT and creates a user-scoped database client. Private tables have RLS ownership policies. Ownership triggers prevent child rows from referencing another user's records. PostgreSQL functions save graphs, activate versions, update actions, and save check-ins atomically. The server secret is reserved for trusted telemetry/quotas/idempotency and disposable test-account administration; it is not the client for ordinary user data operations.
+The gateway explicitly creates the official Google adapter at https://generativelanguage.googleapis.com/v1beta. All roles use GEMINI_MODEL_DEFAULT; only reviewed gemini-3.8-flash is currently allowed. No second provider, paid-only model, grounding/search or external tool is configured. The pinned adapter matches the existing AI SDK provider types.
 
-OpenRouter is the only live AI entry point. `OPENROUTER_API_KEY` and `OPENROUTER_MODEL_DEFAULT` are read in server modules. Every planning role uses that same model at the fixed official endpoint. The existing AI SDK compatible transport sends JSON-schema requests and requires a compatible endpoint. Zod checks the response, then domain validation checks the graph before persistence. Invalid output is never silently replaced with mock output in live mode. AI unavailable errors leave saved plans usable.
+Compact prompts preserve objective, two strategies and one recommendation, milestones, dependencies, executable work, bottleneck, assumptions/risks, feasibility/confidence and replanning. Gemini 3.8 Flash's lowest supported thinking level is low; thought summaries are disabled. Existing Zod and graph checks reject invalid output before persistence. No arbitrary graph repair or validation weakening was introduced. Safe diagnostic logs contain model, token count, finish reason, schema/graph result and timeout status, without prompts, raw responses or credentials.
 
-Deterministic code owns dependency selection, completion transitions, progress, version activation, and graph checks. `AI_PROVIDER_MODE=mock` produces labelled, deterministic proposals for tests. `/demo` is a clearly labelled offline example stored in the browser, not a Supabase or live AI proof.
+AI_PROVIDER_MODE=mock stays the local default. Live failures never silently become mock success. Saved plans work with Supabase connectivity even when new inference is unavailable. The demo is a separate prepared local-storage example.
 
-## Configuration and local startup
+Zero-cost usage requires a verified Free Tier Google project with paid billing disabled. The owner confirmed this status. The complete real Golden Path passed with gemini-3.8-flash after controlled transient retries. No billing settings changed.
 
-Use Node 24 and npm. `package-lock.json` is the single package lock. The native Vite config uses the already installed TanStack, React, Tailwind, and Nitro plugins; it does not use Lovable's hosting wrapper or Cloudflare defaults.
+Errors distinguish provider unavailability, rate limits, invalid structured output, deadlines, auth/access denial and unavailable free access. Retries default to zero; an existing optional control allows at most two retries, only for 503/429, with approximately 2/5-second backoff, jitter and Retry-After handling. Invalid output and auth failures are not retried.
 
-```powershell
-npm ci
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-# Fill the Supabase and OpenRouter values privately in .env.
-npm run check:env
-npm run dev
-```
-
-Open http://localhost:5173. Keep `AI_PROVIDER_MODE=mock` for no-cost development. Before real AI, run `npm run check:ai`, set `AI_PROVIDER_MODE=live` explicitly, and restart the server. Live requests use the same OpenRouter model for intake, generation, and replanning. Default timeout is 90 seconds, retries zero, output limit 12,000 tokens, and per-user daily limits of 20 intake analyses and 10 plan generations/replans, independently per operation. See [.env.example](../.env.example) and the single [environment checklist](VERCEL_ENV_SETUP.md).
-
-Vite exposes only `VITE_*` settings in the browser bundle. Never put OpenRouter or Supabase server secrets under that prefix. The browser/server Supabase URL names share one URL; their publishable-key names share one credential. `VITE_SUPABASE_PROJECT_ID` and test-specific Supabase credentials are not required. Old local credentials are not rewritten; retired settings are ignored.
-
-## Tests
-
-```powershell
-npm run typecheck
-npm run lint
-npm test
-npm run build:node
-npm run build:vercel
-npm run test:e2e
-npm audit
-node scripts/scan-secrets.mjs
-```
-
-Normal tests make no paid inference calls. The mock intake/plan contracts, graph logic, and OpenRouter transport are tested deterministically. The transport regression inspects authentication, the official endpoint, JSON schema, and required capability routing without making a network call.
-
-Opt-in real database and browser checks use the primary Supabase configuration:
-
-```powershell
-$env:AI_PROVIDER_MODE="mock"
-$env:RUN_SUPABASE_RLS_TESTS="true"
-npm test
-$env:RUN_SUPABASE_RLS_TESTS=$null
-$env:RUN_E2E_GOLDEN="true"
-npm run test:e2e -- --workers=1
-$env:RUN_E2E_GOLDEN=$null
-```
-
-These create unique disposable accounts, validate isolation and rollback, and delete only their own fixtures. Never run a remote reset or replay applied migrations. Explicit live test: `AI_PROVIDER_MODE=live`, `RUN_E2E_SCENARIOS=true`, then `npm run test:e2e -- tests/e2e/planning-scenarios.spec.ts --grep Career --workers=1`. That generates one real plan, verifies database persistence, completion/progress, refresh and mobile layout, then cleans up its test account. Clear gate environment variables afterward.
-
-The public-signup test additionally requires an authorized `E2E_SIGNUP_EMAIL_TEMPLATE` containing `{runId}`. Generated confirmation links verify callback/session behavior without claiming an email reached an inbox. Real public inbox delivery still requires a manual check.
-
-## Vercel deployment
-
-Use the existing `reversepath-vibesprint` project, Node 24, `npm ci`, and `npm run build:vercel`. The app includes server functions; uploading a static client folder alone is insufficient. Follow [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md) for Production and Preview. Test the complete candidate before production promotion, retain the previous deployment for rollback, and avoid rewriting Git history. Deployment is intentionally outside the current task.
-
-## Common errors
-
-| Error                              | What to check                                                                                                                  |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Sign-in unavailable                | Both public Supabase settings are present at build time; URL and key belong to the same new project                            |
-| Unauthorized server request        | Valid Supabase session/JWT; global auth middleware registration; matching server URL/public key                                |
-| Missing database function          | Inspect existing remote migrations; apply only reviewed missing SQL with approval, never a reset/bootstrap replay              |
-| AI unavailable                     | Exact uppercase OpenRouter key name, one configured model, live mode, and enabled flag                                         |
-| `AUTH_INVALID` / provider mismatch | Use an actual OpenRouter key; do not rename a key issued by another service                                                    |
-| `MODEL_INCOMPATIBLE`               | Choose a catalog model supporting `structured_outputs` and `response_format`; run `check:ai`                                   |
-| Rate limit or no AI credits        | OpenRouter key budget/account status and per-user application quotas; saved plans still work                                   |
-| Signup email rejected/delayed      | Real disposable mailbox, Supabase Auth email restrictions and delivery setup; do not disable confirmation or repeatedly resend |
-| Saved task cannot start            | Complete its dependency prerequisites first                                                                                    |
-
-[FINAL_CONFIGURATION_REPORT.md](FINAL_CONFIGURATION_REPORT.md) records actual verification results. Older detailed architecture and release reports are labelled historical; they are not the current setup instructions.
+Use Node 24, npm ci and the existing ignored .env. See [.env.example](../.env.example), [environment setup](VERCEL_ENV_SETUP.md), and [verification](GEMINI_VERIFICATION.md). Run check:env, check:ai, typecheck, lint, tests, build, audit and the secret scanner. Real Gemini browser acceptance is separately gated and cannot be replaced by fixture results.

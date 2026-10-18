@@ -7,19 +7,21 @@ loadProjectEnv();
 afterEach(() => vi.unstubAllEnvs());
 it.skipIf(
     process.env["RUN_LIVE_AI_SMOKE"] !== "true" ||
-        !process.env["OPENROUTER_API_KEY"] ||
-        !process.env["OPENROUTER_MODEL_DEFAULT"],
+        !process.env["GEMINI_API_KEY"] ||
+        !process.env["GEMINI_MODEL_DEFAULT"],
 )(
-    "OpenRouter returns a real schema-valid response",
+    "Gemini returns a real schema-valid response (requires verified Free Tier project)",
     async () => {
         vi.stubEnv("AI_PROVIDER_MODE", "live");
         const candidate = candidateForAlias("FAST");
-        expect(candidate?.providerId).toBe("openrouter");
+        expect(candidate?.providerId).toBe("gemini");
         const result = await generateObject({
             model: candidate!.model,
             schema: z.object({ ok: z.literal(true) }),
             prompt: "Set ok to true.",
-            providerOptions: { openrouter: { provider: { require_parameters: true } } },
+            providerOptions: {
+                google: { thinkingConfig: { thinkingLevel: "low", includeThoughts: false } },
+            },
             maxOutputTokens: 256,
             maxRetries: 0,
             abortSignal: AbortSignal.timeout(30000),

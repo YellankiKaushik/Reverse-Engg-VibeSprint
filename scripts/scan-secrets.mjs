@@ -35,7 +35,7 @@ function inspect(file) {
     const content = readFileSync(file, "utf8");
     if ([...privateValues].some((value) => content.includes(value)))
         findings.push(`${file}: private credential match`);
-    if (/sb_secret_[A-Za-z0-9_-]{20,}|sk-(?:proj-)?[A-Za-z0-9_-]{32,}/.test(content))
+    if (/sb_secret_[A-Za-z0-9_-]{20,}|sk-(?:proj-)?[A-Za-z0-9_-]{32,}|AIza[A-Za-z0-9_-]{35}/.test(content))
         findings.push(`${file}: secret pattern match`);
 }
 for (const file of source) inspect(file);

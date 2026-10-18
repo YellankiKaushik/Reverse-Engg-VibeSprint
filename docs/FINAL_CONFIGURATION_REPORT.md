@@ -1,3 +1,5 @@
+> Historical OpenRouter configuration record. For the prepared direct Gemini migration, use [current environment setup](VERCEL_ENV_SETUP.md) and [Gemini verification](GEMINI_VERIFICATION.md). Do not apply the old provider settings below.
+
 # Final configuration report
 
 > **Subsequent GitHub update:** [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) merged the verified source into main; stabilization was safely removed. Main is the only source branch. No Production release accompanied the merge. See [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) for the latest source-control state; earlier GitHub blockers below are historical.

@@ -8,9 +8,8 @@ const aiEnvKeys = [
     "AI_PROVIDER_MODE",
     "AI_PROVIDER_TIMEOUT_MS",
     "AI_PROVIDER_MAX_RETRIES",
-    "OPENROUTER_ENABLED",
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_MODEL_DEFAULT",
+    "GEMINI_API_KEY",
+    "GEMINI_MODEL_DEFAULT",
 ] as const;
 
 function resetEnv() {

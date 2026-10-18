@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 import {
@@ -11,16 +12,32 @@ import {
 
 loadProjectEnv();
 const runGolden = process.env["RUN_E2E_GOLDEN"] === "true" && hasSupabaseLiveTestCredentials();
+const liveMode = process.env["AI_PROVIDER_MODE"] === "live";
+const requestedTimeout = Number(process.env["AI_PROVIDER_TIMEOUT_MS"]);
+const providerWait =
+    Number.isFinite(requestedTimeout) && requestedTimeout > 0
+        ? Math.min(300_000, requestedTimeout)
+        : 90_000;
+const generationWait = providerWait + 15_000;
 
 test.describe("optional authenticated ReversePath Golden Path", () => {
     // The live flow includes intake, planning and two replans with explanations.
-    test.setTimeout(process.env["AI_PROVIDER_MODE"] === "live" ? 480_000 : 180_000);
+    test.setTimeout(liveMode ? Math.max(480_000, generationWait * 6 + 90_000) : 180_000);
 
     test.skip(!runGolden, "Set RUN_E2E_GOLDEN=true with Supabase credentials to run this flow.");
 
-    test("authenticated user can complete the ReversePath golden path with configured AI", async ({
-        page,
-    }) => {
+    async function goldenWorkflow(page: Page, revisions: 1 | 2) {
+        test.skip(revisions === 1 && !liveMode, "The compact acceptance case requires real AI.");
+        async function expectAiSuccess(
+            success: ReturnType<typeof page.getByText>,
+            timeout: number,
+        ) {
+            const error = page.locator('[data-sonner-toast][data-type="error"]');
+            await expect(success.or(error).first()).toBeVisible({ timeout });
+            if (await error.isVisible())
+                throw new Error("AI operation failed; inspect safe server diagnostics.");
+            await expect(success).toBeVisible();
+        }
         const debugGolden = process.env["PLAYWRIGHT_DEBUG_GOLDEN"] === "true";
         const httpEvents: string[] = [];
         if (debugGolden) {
@@ -57,7 +74,11 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             global: { fetch: createSupabaseTestFetch(secretKey) },
             auth: { persistSession: false, autoRefreshToken: false },
         });
-        const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+        const created = await admin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+        });
         const secondCreated = await admin.auth.admin.createUser({
             email: secondEmail,
             password,
@@ -108,9 +129,10 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                 );
             await page.getByRole("button", { name: /analyse objective/i }).click();
 
-            await expect(page.getByRole("heading", { name: /product design/i })).toBeVisible({
-                timeout: 90_000,
-            });
+            await expectAiSuccess(
+                page.getByRole("heading", { name: /product design/i }),
+                generationWait,
+            );
             if (
                 await page
                     .getByRole("button", { name: /save answers/i })
@@ -145,7 +167,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(generateButton).toBeEnabled();
             await generateButton.click();
             try {
-                await expect(page.getByText(/plan generated/i)).toBeVisible({ timeout: 90_000 });
+                await expectAiSuccess(page.getByText(/plan generated/i), generationWait);
             } catch (error) {
                 if (debugGolden) {
                     const text = await page.evaluate(() => document.body.innerText);
@@ -165,20 +187,73 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(page.locator("main").getByText(/^Risks & premortem$/)).toBeVisible();
             await expect(page.locator("main").getByText(/^Execution frontier/)).toBeVisible();
             if (process.env["AI_PROVIDER_MODE"] === "live") {
-                await expect(page.getByText(/Live AI plan · openrouter · /)).toBeVisible();
+                await expect(page.getByText(/Live AI plan · gemini · /)).toBeVisible();
+                const caseId = new URL(page.url()).pathname.split("/").at(-1)!;
+                const plan = await admin.from("plans").select("id").eq("case_id", caseId).single();
+                expect(plan.error).toBeNull();
+                const version = await admin
+                    .from("plan_versions")
+                    .select("id")
+                    .eq("plan_id", plan.data!.id)
+                    .eq("state", "ACTIVE")
+                    .single();
+                expect(version.error).toBeNull();
+                const [nodes, edges, strategies] = await Promise.all([
+                    admin
+                        .from("plan_nodes")
+                        .select("node_type, strategy_id")
+                        .eq("plan_version_id", version.data!.id),
+                    admin.from("plan_edges").select("id").eq("plan_version_id", version.data!.id),
+                    admin
+                        .from("strategies")
+                        .select("id, selected")
+                        .eq("plan_version_id", version.data!.id),
+                ]);
+                for (const result of [nodes, edges, strategies]) expect(result.error).toBeNull();
+                expect(strategies.data).toHaveLength(2);
+                const recommended = strategies.data!.filter((s) => s.selected);
+                expect(recommended).toHaveLength(1);
+                const milestones = nodes.data!.filter(
+                    (n) => n.node_type === "MILESTONE" && n.strategy_id === recommended[0]!.id,
+                );
+                const executable = nodes.data!.filter(
+                    (n) => n.node_type === "ACTION" || n.node_type === "EXPERIMENT",
+                );
+                expect(milestones.length).toBeGreaterThanOrEqual(3);
+                expect(milestones.length).toBeLessThanOrEqual(5);
+                expect(executable.length).toBeGreaterThanOrEqual(6);
+                expect(executable.length).toBeLessThanOrEqual(12);
+                expect(nodes.data!.length).toBeLessThanOrEqual(24);
+                expect(edges.data!.length).toBeLessThanOrEqual(48);
+                console.log(
+                    "COMPACT_PERSISTED_GRAPH",
+                    JSON.stringify({
+                        nodes: nodes.data!.length,
+                        edges: edges.data!.length,
+                        strategies: strategies.data!.length,
+                        recommendedMilestones: milestones.length,
+                        executable: executable.length,
+                    }),
+                );
             }
-            const selectedStrategy = page
-                .locator("article")
-                .filter({ has: page.getByRole("button", { name: "Selected", exact: true }) });
+            const selectedStrategy = page.locator("article").filter({
+                has: page.getByRole("button", { name: "Selected", exact: true }),
+            });
             const strategyName = await selectedStrategy.getByRole("heading").textContent();
-            const alternate = page.getByRole("button", { name: "Choose this route", exact: true });
+            const alternate = page.getByRole("button", {
+                name: "Choose this route",
+                exact: true,
+            });
             if (await alternate.count()) {
                 await alternate.first().click();
                 const original = page.locator("article").filter({
                     has: page.getByRole("heading", { name: strategyName!, exact: true }),
                 });
                 await expect(
-                    original.getByRole("button", { name: "Choose this route", exact: true }),
+                    original.getByRole("button", {
+                        name: "Choose this route",
+                        exact: true,
+                    }),
                 ).toBeEnabled();
                 await original
                     .getByRole("button", { name: "Choose this route", exact: true })
@@ -221,22 +296,25 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.getByRole("button", { name: /save check-in/i }).click();
             await expect(page.getByText(/check-in saved/i)).toBeVisible();
 
-            await page
-                .getByPlaceholder(/what moved/i)
-                .fill("Capacity changed enough to resize the first path.");
-            await page.getByPlaceholder("What changed (label)").fill("Weekly capacity");
-            await page.getByPlaceholder(/new value/i).fill("3 hours per week");
-            await page.getByRole("button", { name: /propose a revised plan/i }).click();
-            await expect(page.getByText(/Version \d+ is a candidate/i)).toBeVisible({
-                timeout: 180_000,
-            });
-            await expect(page.getByText(/what changed in this version/i)).toBeVisible();
-            await expect(page.getByRole("button", { name: /^reject$/i }).first()).toBeVisible();
-            await page
-                .getByRole("button", { name: /^reject$/i })
-                .first()
-                .click();
-            await expect(page.locator("main").getByText(/^v\d+ · REJECTED/i)).toBeVisible();
+            if (revisions === 2) {
+                await page
+                    .getByPlaceholder(/what moved/i)
+                    .fill("Capacity changed enough to resize the first path.");
+                await page.getByPlaceholder("What changed (label)").fill("Weekly capacity");
+                await page.getByPlaceholder(/new value/i).fill("3 hours per week");
+                await page.getByRole("button", { name: /propose a revised plan/i }).click();
+                await expectAiSuccess(
+                    page.getByText(/Version \d+ is a candidate/i),
+                    Math.max(180_000, generationWait * 2),
+                );
+                await expect(page.getByText(/what changed in this version/i)).toBeVisible();
+                await expect(page.getByRole("button", { name: /^reject$/i }).first()).toBeVisible();
+                await page
+                    .getByRole("button", { name: /^reject$/i })
+                    .first()
+                    .click();
+                await expect(page.locator("main").getByText(/^v\d+ · REJECTED/i)).toBeVisible();
+            }
 
             await page
                 .getByPlaceholder(/what moved/i)
@@ -244,9 +322,10 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.getByPlaceholder("What changed (label)").fill("Weekly capacity");
             await page.getByPlaceholder(/new value/i).fill("3 hours per week");
             await page.getByRole("button", { name: /propose a revised plan/i }).click();
-            await expect(page.getByText(/Version \d+ is a candidate/i)).toBeVisible({
-                timeout: 180_000,
-            });
+            await expectAiSuccess(
+                page.getByText(/Version \d+ is a candidate/i),
+                Math.max(180_000, generationWait * 2),
+            );
             await page
                 .getByRole("button", { name: /accept this version|^accept$/i })
                 .first()
@@ -256,10 +335,41 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page.reload();
             await expect(page.getByText(/versions/i)).toBeVisible();
             await expect(page.locator("main").getByText(/^v1 · /i)).toBeVisible();
-            await expect(page.locator("main").getByText(/^v\d+ · REJECTED/i)).toBeVisible();
+            if (revisions === 2)
+                await expect(page.locator("main").getByText(/^v\d+ · REJECTED/i)).toBeVisible();
             await expect(page.locator("main").getByText(/^v\d+ · ACTIVE/i)).toBeVisible();
 
             const userAPlanUrl = page.url();
+            const caseId = new URL(userAPlanUrl).pathname.split("/").at(-1)!;
+            const savedPlan = await admin
+                .from("plans")
+                .select("id, active_version_id")
+                .eq("case_id", caseId)
+                .single();
+            expect(savedPlan.error).toBeNull();
+            const savedVersions = await admin
+                .from("plan_versions")
+                .select("id, state, version_number")
+                .eq("plan_id", savedPlan.data!.id);
+            expect(savedVersions.error).toBeNull();
+            const activeVersions = savedVersions.data!.filter(
+                (version) => version.state === "ACTIVE",
+            );
+            expect(activeVersions).toHaveLength(1);
+            expect(activeVersions[0]!.id).toBe(savedPlan.data!.active_version_id);
+            expect(activeVersions[0]!.version_number).toBe(revisions + 1);
+            expect(
+                savedVersions.data!.filter((version) => version.state === "REJECTED"),
+            ).toHaveLength(revisions - 1);
+            console.log(
+                "PERSISTED_REVISION_INTEGRITY",
+                JSON.stringify({
+                    versions: savedVersions.data!.length,
+                    activeVersion: activeVersions[0]!.version_number,
+                    activePointerMatches: true,
+                    rejected: revisions - 1,
+                }),
+            );
             await page.getByRole("button", { name: /sign out/i }).click();
             await expect(
                 page.getByRole("heading", { name: /sign in to reversepath/i }),
@@ -313,5 +423,10 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                 await admin.auth.admin.deleteUser(secondCreated.data.user.id);
             }
         }
-    });
+    }
+    test("authenticated user can complete the ReversePath golden path with configured AI", async ({
+        page,
+    }) => goldenWorkflow(page, 2));
+    test("compact live workflow accepts one real revision", async ({ page }) =>
+        goldenWorkflow(page, 1));
 });

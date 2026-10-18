@@ -3,12 +3,17 @@
  * Builds minimised context, applies versioned prompts, validates every proposal
  * against the schema before anything is persisted, and records telemetry.
  */
-import { generateObject } from "ai";
+import { generateObject, NoObjectGeneratedError } from "ai";
 import type { z } from "zod";
+import { validateProposal } from "@/lib/planner.server";
+import { isGeminiModelIdentifier } from "@/lib/gemini-policy";
+import type { GoogleLanguageModelOptions } from "@ai-sdk/google";
+import { logAiDiagnostics, type AiDiagnostics } from "./diagnostics.server";
 
 import {
     candidateForAlias,
     classifyAiError,
+    geminiRetryDelayMs,
     isMockAiEnabled,
     maxProviderRetries,
     maxOutputTokens,
@@ -53,6 +58,7 @@ export interface AiCallMeta {
     schemaValid: boolean;
     correlationId: string;
     attempts: AiAttemptTelemetry[];
+    diagnostics?: AiDiagnostics;
 }
 
 export interface AiCallResult<T> {
@@ -68,6 +74,7 @@ async function callModel<S extends z.ZodType>(args: {
     prompt: string;
     correlationId: string;
     mock: () => z.infer<S>;
+    validateGraph?: (data: z.infer<S>) => unknown;
 }): Promise<AiCallResult<z.infer<S>>> {
     const started = Date.now();
 
@@ -94,7 +101,7 @@ async function callModel<S extends z.ZodType>(args: {
     const candidate = candidateForAlias(args.alias);
     if (!candidate) {
         const enriched = new Error(
-            "Free AI is unavailable. Configure the existing OpenRouter key and a verified free OPENROUTER_MODEL_DEFAULT on the server.",
+            "Gemini is unavailable. Configure GEMINI_API_KEY and an approved GEMINI_MODEL_DEFAULT on a Free Tier project.",
         ) as Error & {
             code: string;
             retryable: boolean;
@@ -121,20 +128,59 @@ async function callModel<S extends z.ZodType>(args: {
 
     const attempts: AiAttemptTelemetry[] = [];
     let lastFailure = classifyAiError(new Error("AI is temporarily unavailable."));
+    let diagnostic: AiDiagnostics = {
+        providerModel: candidate.modelId,
+        outputTokens: null,
+        finishReason: null,
+        schemaValid: null,
+        graphValid: null,
+        timedOut: false,
+    };
+    let inputTokens: number | null = null;
 
     for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
         const attemptStarted = Date.now();
+        diagnostic = {
+            ...diagnostic,
+            providerModel: candidate.modelId,
+            outputTokens: null,
+            finishReason: null,
+            schemaValid: null,
+            graphValid: null,
+            timedOut: false,
+        };
+        inputTokens = null;
         try {
             const result = await generateObject({
                 model: candidate.model,
                 schema: args.schema,
                 system: args.system,
                 prompt: args.prompt,
-                providerOptions: { openrouter: { provider: { require_parameters: true } } },
+                providerOptions: {
+                    google: {
+                        structuredOutputs: true,
+                        thinkingConfig: { thinkingLevel: "low", includeThoughts: false },
+                    } satisfies GoogleLanguageModelOptions,
+                },
                 maxRetries: 0,
                 maxOutputTokens: maxOutputTokens(),
                 abortSignal: AbortSignal.timeout(timeoutMs()),
             });
+
+            inputTokens = result.usage?.inputTokens ?? null;
+            diagnostic.providerModel = isGeminiModelIdentifier(result.response.modelId)
+                ? result.response.modelId
+                : candidate.modelId;
+            diagnostic.outputTokens = result.usage?.outputTokens ?? null;
+            diagnostic.finishReason = result.finishReason;
+            const data = args.schema.parse(result.object);
+            diagnostic.schemaValid = true;
+            if (args.validateGraph) {
+                diagnostic.graphValid = false;
+                args.validateGraph(data);
+                diagnostic.graphValid = true;
+            }
+            logAiDiagnostics(args.operation, diagnostic);
 
             attempts.push({
                 provider: candidate.providerName,
@@ -147,7 +193,7 @@ async function callModel<S extends z.ZodType>(args: {
             });
 
             return {
-                data: args.schema.parse(result.object),
+                data,
                 meta: {
                     operation: args.operation,
                     provider: candidate.providerName,
@@ -161,10 +207,26 @@ async function callModel<S extends z.ZodType>(args: {
                     schemaValid: true,
                     correlationId: args.correlationId,
                     attempts,
+                    diagnostics: diagnostic,
                 },
             };
         } catch (error) {
+            if (NoObjectGeneratedError.isInstance(error)) {
+                if (error.response?.modelId && isGeminiModelIdentifier(error.response.modelId))
+                    diagnostic.providerModel = error.response.modelId;
+                inputTokens = error.usage?.inputTokens ?? null;
+                diagnostic.outputTokens = error.usage?.outputTokens ?? null;
+                diagnostic.finishReason = error.finishReason ?? null;
+                diagnostic.schemaValid = false;
+            }
             lastFailure = classifyAiError(error);
+            if (lastFailure.code === "GEMINI_SCHEMA_INVALID") diagnostic.schemaValid = false;
+            diagnostic.timedOut =
+                lastFailure.timedOut === true ||
+                (error instanceof Error &&
+                    (["AbortError", "TimeoutError"].includes(error.name) ||
+                        /timeout|timed out|aborted/i.test(error.message)));
+            logAiDiagnostics(args.operation, diagnostic);
             attempts.push({
                 provider: candidate.providerName,
                 modelAlias: candidate.modelAlias,
@@ -174,8 +236,10 @@ async function callModel<S extends z.ZodType>(args: {
                 outcome: lastFailure.code,
                 retryable: lastFailure.retryable,
             });
-            // Repeating a free-tier 429 consumes quota and cannot fix a daily cap.
-            if (!lastFailure.retryable || lastFailure.code === "AI_RATE_LIMITED") break;
+            if (!lastFailure.retryable || attempt >= maxProviderRetries()) break;
+            const delayMs = geminiRetryDelayMs(error, attempt);
+            if (delayMs === undefined) break;
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
     }
 
@@ -197,12 +261,13 @@ async function callModel<S extends z.ZodType>(args: {
         providerModel: attempts.at(-1)?.modelId ?? null,
         promptVersion: PROMPT_VERSION,
         latencyMs: Date.now() - started,
-        inputTokens: null,
-        outputTokens: null,
+        inputTokens,
+        outputTokens: diagnostic.outputTokens,
         outcome: lastFailure.code,
-        schemaValid: lastFailure.code !== "AI_SCHEMA_INVALID",
+        schemaValid: diagnostic.schemaValid === true,
         correlationId: args.correlationId,
         attempts,
+        diagnostics: diagnostic,
     };
     throw enriched;
 }
@@ -237,6 +302,7 @@ export function runPlanGeneration(
         prompt,
         correlationId: input.correlationId,
         mock: () => mockPlanProposal(input),
+        validateGraph: validateProposal,
     });
 }
 
@@ -252,6 +318,7 @@ export function runReplan(
         prompt,
         correlationId: input.correlationId,
         mock: () => mockPlanProposal({ ...input, replan: true }),
+        validateGraph: validateProposal,
     });
 }
 

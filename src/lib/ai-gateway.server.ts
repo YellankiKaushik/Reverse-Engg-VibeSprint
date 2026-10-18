@@ -1,14 +1,14 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogle } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
-import { enforceFreeRequest, isFreeModelId } from "./free-ai-policy";
+import { isAllowedGeminiModel } from "./gemini-policy";
 
 export const MODEL_ALIASES = ["FAST", "PRIMARY", "CRITIC", "FALLBACK"] as const;
 export type ModelAlias = (typeof MODEL_ALIASES)[number];
-export const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1";
+export const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta";
 
 export interface AiProviderCandidate {
-    providerId: "openrouter";
-    providerName: "openrouter";
+    providerId: "gemini";
+    providerName: "gemini";
     modelAlias: ModelAlias;
     modelId: string;
     model: LanguageModel;
@@ -41,32 +41,43 @@ export function maxOutputTokens() {
 
 export function maxProviderRetries() {
     const parsed = Number(process.env["AI_PROVIDER_MAX_RETRIES"]);
-    return Number.isFinite(parsed) && parsed >= 0 ? Math.min(3, Math.floor(parsed)) : 0;
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.min(2, Math.floor(parsed)) : 0;
+}
+
+/** Opt-in retries are restricted to transient 503/429 responses, at most three attempts. */
+export function geminiRetryDelayMs(error: unknown, attempt: number): number | undefined {
+    const failure = error as
+        | { statusCode?: number; status?: number; responseHeaders?: Record<string, string> }
+        | undefined;
+    if (![429, 503].includes(failure?.statusCode ?? failure?.status ?? 0) || attempt >= 2)
+        return undefined;
+    const header = failure?.responseHeaders?.["retry-after"];
+    const seconds = header ? Number(header) : NaN;
+    const retryAfterMs = Number.isFinite(seconds)
+        ? seconds * 1000
+        : header
+          ? Date.parse(header) - Date.now()
+          : 0;
+    // Leave long quota cooldowns to a later deliberate request.
+    if (retryAfterMs > 60_000) return undefined;
+    return (
+        Math.max(retryAfterMs || 0, attempt === 0 ? 2000 : 5000) + Math.floor(Math.random() * 250)
+    );
 }
 
 // One service, one model for every planning role. No alternate endpoints or keys.
 export function candidateForAlias(alias: ModelAlias): AiProviderCandidate | undefined {
-    if (isMockAiEnabled() || process.env["OPENROUTER_ENABLED"] === "false") return undefined;
-    const apiKey = process.env["OPENROUTER_API_KEY"]?.trim();
-    const modelId = process.env["OPENROUTER_MODEL_DEFAULT"]?.trim();
-    if (!apiKey || !modelId || !isFreeModelId(modelId)) return undefined;
-    const provider = createOpenAICompatible({
-        name: "openrouter",
-        baseURL: OPENROUTER_ENDPOINT,
+    if (isMockAiEnabled()) return undefined;
+    const apiKey = process.env["GEMINI_API_KEY"]?.trim();
+    const modelId = process.env["GEMINI_MODEL_DEFAULT"]?.trim();
+    if (!apiKey || !modelId || !isAllowedGeminiModel(modelId)) return undefined;
+    const provider = createGoogle({
+        baseURL: GEMINI_ENDPOINT,
         apiKey,
-        supportsStructuredOutputs: true,
-        // Applied after caller options, so they cannot override the zero-price cap.
-        transformRequestBody: (body) => enforceFreeRequest(modelId, body),
-        headers: {
-            "X-OpenRouter-Title": "ReversePath",
-            ...(process.env["PUBLIC_APP_URL"]
-                ? { "HTTP-Referer": process.env["PUBLIC_APP_URL"]! }
-                : {}),
-        },
     });
     return {
-        providerId: "openrouter",
-        providerName: "openrouter",
+        providerId: "gemini",
+        providerName: "gemini",
         modelAlias: alias,
         modelId,
         model: provider(modelId),
@@ -75,14 +86,17 @@ export function candidateForAlias(alias: ModelAlias): AiProviderCandidate | unde
 
 export interface AiFailure {
     code:
-        | "AI_PROVIDER_TIMEOUT"
-        | "AI_RATE_LIMITED"
-        | "AI_SCHEMA_INVALID"
-        | "AI_POLICY_REJECTED"
-        | "AI_BUDGET_EXCEEDED"
+        | "GEMINI_PROVIDER_UNAVAILABLE"
+        | "GEMINI_RATE_LIMITED"
+        | "GEMINI_SCHEMA_INVALID"
+        | "GEMINI_TIMEOUT"
+        | "GEMINI_AUTH_INVALID"
+        | "GEMINI_FREE_TIER_UNAVAILABLE"
+        | "AI_GRAPH_INVALID"
         | "AI_UNAVAILABLE";
     message: string;
     retryable: boolean;
+    timedOut?: boolean;
 }
 
 /** Maps gateway/provider failures onto the documented error model. */
@@ -93,66 +107,75 @@ export function classifyAiError(error: unknown): AiFailure {
               status?: number;
               name?: string;
               message?: string;
-              responseBody?: string;
+              code?: string;
           }
         | undefined;
-    let status = anyErr?.statusCode ?? anyErr?.status;
-    // OpenRouter can send a provider failure inside an HTTP 200 JSON body.
-    // Read only its numeric status; never expose the raw response or metadata.
-    if (status === 200 && anyErr?.responseBody) {
-        try {
-            const code: unknown = JSON.parse(anyErr.responseBody)?.error?.code;
-            if (typeof code === "number" && Number.isInteger(code) && code >= 400 && code <= 599)
-                status = code;
-        } catch {
-            // Malformed responses continue through the existing safe error mapping.
-        }
-    }
+    const status = anyErr?.statusCode ?? anyErr?.status;
     const message = anyErr?.message ?? "The planning engine could not complete this request.";
+
+    if (anyErr?.code === "PLAN_VALIDATION_FAILED")
+        return {
+            code: "AI_GRAPH_INVALID",
+            message: "The planning engine returned an invalid dependency graph. Please try again.",
+            retryable: false,
+        };
 
     if (status === 429)
         return {
-            code: "AI_RATE_LIMITED",
-            message: "The planning engine is rate limited right now. Please try again shortly.",
+            code: "GEMINI_RATE_LIMITED",
+            message:
+                "Gemini's free quota or rate limit was reached. Try again later. Saved plans still work.",
             retryable: true,
         };
     if (status === 402)
         return {
-            code: "AI_BUDGET_EXCEEDED",
+            code: "GEMINI_FREE_TIER_UNAVAILABLE",
             message:
-                "Free AI is unavailable for this account right now. Check the account's free access and quota. Saved plans still work.",
+                "Gemini free-tier access is unavailable for this project. Saved plans still work.",
             retryable: false,
         };
-    if (status === 403)
+    if (status === 401 || status === 403)
         return {
-            code: "AI_POLICY_REJECTED",
+            code: "GEMINI_AUTH_INVALID",
             message:
-                "AI access is blocked by workspace or provider policy. Saved plans still work.",
+                "Gemini authentication or project access was rejected. Saved plans still work.",
             retryable: false,
         };
-    if (status === 401)
+    if (status === 404)
         return {
             code: "AI_UNAVAILABLE",
-            message: "AI is not configured for this app.",
+            message: "The configured Gemini model is unavailable. Saved plans still work.",
             retryable: false,
         };
-    if (status === 400 || /schema|zod|json|parse|object generated|malformed/i.test(message))
+    if (status === 408 || status === 504)
         return {
-            code: "AI_SCHEMA_INVALID",
-            message: "The planning engine returned invalid structured output. Please try again.",
+            code: "GEMINI_TIMEOUT",
+            message: "Gemini timed out. Saved plans still work.",
             retryable: true,
+            timedOut: true,
         };
     if (status && status >= 500)
         return {
-            code: "AI_PROVIDER_TIMEOUT",
-            message: "The planning engine is temporarily unavailable. Saved plans still work.",
+            code: "GEMINI_PROVIDER_UNAVAILABLE",
+            message: "Gemini is temporarily unavailable. Saved plans still work.",
             retryable: true,
+            timedOut: false,
         };
-    if (anyErr?.name === "AbortError" || /timeout|aborted/i.test(message))
+    if (status === 400 || /schema|zod|json|parse|object generated|malformed/i.test(message))
         return {
-            code: "AI_PROVIDER_TIMEOUT",
+            code: "GEMINI_SCHEMA_INVALID",
+            message: "The planning engine returned invalid structured output. Please try again.",
+            retryable: false,
+        };
+    if (
+        ["AbortError", "TimeoutError"].includes(anyErr?.name ?? "") ||
+        /timeout|aborted/i.test(message)
+    )
+        return {
+            code: "GEMINI_TIMEOUT",
             message: "The planning engine timed out.",
             retryable: true,
+            timedOut: true,
         };
 
     return {

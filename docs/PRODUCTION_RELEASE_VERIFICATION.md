@@ -1,5 +1,13 @@
 # Production release verification
 
+## Verified Gemini source; hosting unchanged — October 18, 2026
+
+The complete real Gemini Free Tier Golden Path passed locally with `gemini-3.8-flash`. The owner confirmed Free Tier with paid billing disabled. The current availability check succeeded on attempt two (503, then 200 after 2.1-second backoff); 3.6 was not used. Real intake, compact plan, Zod/graph validation, Supabase persistence/activation, strategy selection, action/progress refresh, check-in, two replans, rejection and acceptance all passed. Database refresh confirmed three versions, one rejected revision, exactly one active version (v3), and a matching active-version pointer.
+
+Final QA: 81 automated tests passed, one optional live smoke skipped; one real browser Golden Path passed. Environment/catalog checks, typecheck, lint (six existing warnings), local Vercel build, dependency audit and secret scans pass. The initial graph had 14 nodes, 14 edges, two strategies, three recommended milestones and seven executable nodes. Six successful Golden Path AI operations returned schema-valid output; one replan 503 recovered within the approved bound.
+
+The migration and this report accompany the main-branch source update. Vercel variables, deployments, aliases and public Production remain unchanged; existing rollback deployments are preserved. The next gate is the owner’s manual Gemini variable update and confirmation, followed by separately authorized hosted verification. No billing, alternate provider, database reset or auth setup was performed. Owner-confirmed Google and real email/password authentication remain MANUAL PASS. See [Gemini verification](GEMINI_VERIFICATION.md) and [Vercel environment setup](VERCEL_ENV_SETUP.md). All earlier provider/release sections below are historical.
+
 ## Current free-only release preparation — October 18, 2026
 
 **FREE_MODEL_INCOMPATIBLE — acceptance incomplete because the free provider could not generate the plan during testing.** `openrouter/free` passed actual zero-cost structured intake; the next plan call returned provider error 429 in HTTP 200. Nex's requested exact ID was absent and NVIDIA 3.5 returned 502. Four live requests were made; no paid request/fallback was introduced. Full free planning, graph persistence and replanning are not verified by historical paid-model results below.

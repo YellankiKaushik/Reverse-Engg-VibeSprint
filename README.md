@@ -4,9 +4,9 @@
 
 ReversePath turns a goal, problem, decision, or uncertain idea into a structured plan. It maps requirements and gaps, compares strategies, identifies the current bottleneck, and ranks work you can start now. Track progress, record changed circumstances, and review revised plans before accepting them.
 
-Built with React and TanStack Start, Supabase for authentication and persistent data, and OpenRouter for live AI inference. Deterministic mock AI and a prepared offline demo are also included.
+Built with React and TanStack Start, Supabase for authentication and persistent data, and the direct Google Gemini Developer API for live AI. Deterministic mock AI and a prepared offline demo are also included.
 
-**Free AI release status — October 18, 2026:** the local candidate is `openrouter/free`, with zero-price request constraints and paid inference disabled in the new source. Real structured intake passed at $0; plan generation hit a provider rate limit. Full free planning/replanning acceptance remains blocked. Vercel settings and deployments are unchanged. See [free AI verification](docs/FREE_AI_VERIFICATION.md).
+**Gemini migration status — October 18, 2026:** The complete real Free Tier Golden Path passed with `gemini-3.8-flash`: intake, compact planning, validation, Supabase save/activation, strategy/action/progress/refresh, check-in, two real replans, rejection and acceptance, and active-version integrity. Availability recovered on attempt two after a bounded 503 retry. Vercel and public Production remain unchanged, awaiting the owner’s manual environment update. See [Gemini verification](docs/GEMINI_VERIFICATION.md).
 
 ## Features and workflow
 
@@ -25,7 +25,7 @@ The dashboard lists your objectives and supports deleting an objective and its d
 | --------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
 | Prepared `/demo`            | No account; progress stays in browser local storage | Curated six-month product-management example; no inference |
 | Authenticated mock planning | Supabase account and configured database            | Labeled, deterministic proposals; no external AI calls     |
-| Authenticated live planning | Supabase account and configured database            | Structured proposals generated through OpenRouter          |
+| Authenticated live planning | Supabase account and configured database            | Structured proposals generated through direct Gemini       |
 
 Mock mode replaces inference only; the authenticated workspace still requires Supabase.
 
@@ -50,7 +50,7 @@ Mock mode replaces inference only; the authenticated workspace still requires Su
 | Application   | TanStack Start SSR and server functions, TanStack Router, TanStack Query    |
 | Build/runtime | Vite 8, Nitro Node server or Vercel preset; Node 24 project baseline        |
 | Auth/data     | Supabase Auth, PostgreSQL, row-level security (RLS)                         |
-| AI            | AI SDK, OpenAI-compatible OpenRouter transport, Zod contracts               |
+| AI            | AI SDK, official Google Gemini adapter, Zod contracts                       |
 | Verification  | Vitest, Playwright Chromium, TypeScript, ESLint, Prettier, secret scanner   |
 
 ```mermaid
@@ -60,9 +60,9 @@ flowchart TD
     Server -->|User-scoped client and RLS| DB[Supabase PostgreSQL]
     Server --> AI{AI mode}
     AI -->|mock| Mock[Deterministic proposal]
-    AI -->|live: server-only key| OpenRouter[OpenRouter: one model]
+    AI -->|live: server-only key| Gemini[Direct Gemini: one model]
     Mock --> Validate[Zod and graph validation]
-    OpenRouter --> Validate
+    Gemini --> Validate
     Validate -->|Atomic graph save| DB
     Server -->|Trusted admin client| Ops[Usage, quotas, idempotency, audit]
     Demo[Prepared /demo] --> Local[Browser local storage]
@@ -72,7 +72,7 @@ Global function middleware in `src/start.ts` attaches the browser session's bear
 
 The privileged server client handles usage records, quota checks, idempotency receipts, and audit events. Ordinary planning-data operations use the authenticated user's client. Provider credentials stay in server modules.
 
-Live inference uses the fixed endpoint `https://openrouter.ai/api/v1`. All logical model roles use `OPENROUTER_MODEL_DEFAULT`; there is no alternate-provider fallback. Responses pass structured-output contracts and graph validation before graph persistence. Live failures surface as errors rather than silently returning mock output. A deterministic node diff keeps candidate review available if the extra AI change-explanation call fails.
+Live inference uses the fixed direct endpoint `https://generativelanguage.googleapis.com/v1beta`. All roles use `GEMINI_MODEL_DEFAULT`; Gemini is the only live provider. Compact proposals pass Zod and graph validation before atomic persistence. Live failures surface safe errors; they do not silently become mock output. A deterministic node diff keeps candidate review available if the extra change-explanation call fails.
 
 ## Run locally
 
@@ -108,7 +108,7 @@ Start with [`.env.example`](.env.example). See [the hosting checklist](docs/VERC
 | `SUPABASE_PUBLISHABLE_KEY`      | Same publishable key for user-scoped server requests           |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Server-only modern `sb_secret_` key or legacy service-role JWT |
 
-The URL pair must match, and the publishable-key pair must match. Never put server secrets or OpenRouter keys in `VITE_*` variables. Environment files are ignored except for `.env.example`.
+The URL pair must match, and the publishable-key pair must match. Never put server secrets or Gemini keys in `VITE_*` variables. Environment files are ignored except for `.env.example`.
 
 ### Live AI
 
@@ -116,27 +116,25 @@ Configure these values privately in `.env`:
 
 ```dotenv
 AI_PROVIDER_MODE=live
-OPENROUTER_API_KEY=<your-openrouter-key>
-OPENROUTER_MODEL_DEFAULT=openrouter/free
+GEMINI_API_KEY=<your-existing-gemini-key>
+GEMINI_MODEL_DEFAULT=gemini-3.8-flash
 ```
 
-This free-router candidate supports structured output but has not passed the full planning journey. Paid model IDs are rejected; there is no paid fallback. Validate current zero pricing and actual serving-endpoint capabilities:
+Google documents a free API tier and structured outputs for this model. Zero-cost operation requires a verified Free Tier project with paid billing disabled; model/key checks alone do not prove account eligibility. No paid-only model, paid tools, grounding/search or second provider is configured.
 
 ```powershell
 npm run check:env
 npm run check:ai
 ```
 
-`check:ai` validates the key, zero catalog/endpoint pricing, `structured_outputs`, `response_format` and output-token capacity. It does not generate text or prove current provider capacity. Every live request enforces zero maximum prices, required parameters and disabled provider fallback. HTTP 402/429 surface safe errors without automatic retries; saved data remains accessible with Supabase connectivity. Free limits and model availability/pricing can change. See [limits, actual results and how to change the model](docs/FREE_AI_VERIFICATION.md). Restart the development server after configuration changes. Missing or unrecognized runtime modes default to mock; `check:env` rejects invalid mode names.
+`check:ai` validates the existing Gemini key, model catalog and output capacity without generation. Confirm the project shows Free Tier in Google AI Studio before any live test. The current model supports low thinking, not a disabled/minimal setting; the adapter requests low thinking and no thought summaries. Provider errors retain safe token/finish/schema/graph diagnostics. Saved plans remain usable with Supabase connectivity when AI is unavailable. See [Gemini verification and pricing references](docs/GEMINI_VERIFICATION.md). Restart after changing settings. Mock mode stays the default.
 
 ### Optional runtime controls
 
 | Variable                                | Default / behavior                                                               |
 | --------------------------------------- | -------------------------------------------------------------------------------- |
-| `OPENROUTER_ENABLED`                    | Set `false` to disable live inference; does not switch live requests to mock     |
-| `PUBLIC_APP_URL`                        | Optional OpenRouter attribution URL; auth redirects use the browser origin       |
 | `AI_PROVIDER_TIMEOUT_MS`                | 90,000 ms per attempt; maximum 300,000                                           |
-| `AI_PROVIDER_MAX_RETRIES`               | 0; maximum 3 retries against the same provider                                   |
+| `AI_PROVIDER_MAX_RETRIES`               | 0; maximum 2 retries (3 attempts), only HTTP 503/429 with bounded backoff        |
 | `AI_MAX_OUTPUT_TOKENS`                  | 12,000; accepted override range 256–16,384                                       |
 | `AI_DAILY_REQUEST_LIMIT`                | Shared override for per-user, per-operation limits over a rolling 24-hour window |
 | `AI_LIMIT_CLASSIFY_AND_CLARIFY_PER_DAY` | Intake override; code default 20                                                 |
@@ -146,7 +144,7 @@ npm run check:ai
 
 Operation-specific quotas take precedence over the shared override. Mock workspace requests still pass through usage and quota handling.
 
-`APP_ENV`, `VITE_AUTH_PROVIDER`, and `AI_GENERATION_ENABLED` appear in configuration material but are not read by application runtime code. The environment checker accepts only `supabase` or an omitted `VITE_AUTH_PROVIDER`. Use `OPENROUTER_ENABLED=false` for the implemented live-inference switch. Legacy provider keys, per-role model settings, custom provider endpoints, and `SUPABASE_TEST_*` credentials are unused.
+`VITE_AUTH_PROVIDER=supabase` remains optional. `APP_ENV`, `PUBLIC_APP_URL`, old provider switches/keys, per-role model settings, arbitrary provider endpoints and `SUPABASE_TEST_*` credentials are unused. Select mock/live explicitly with `AI_PROVIDER_MODE`; live failures never silently switch modes.
 
 ## Database and authentication setup
 
@@ -210,7 +208,7 @@ Server functions are grouped into `intake.functions.ts`, `planning.functions.ts`
 | ------------------------------- | --------------------------------------------------------------------------- |
 | `npm run dev`                   | Development server on port 5173                                             |
 | `npm run check:env`             | Check config, credential matching, duplicates, and browser-secret exposure  |
-| `npm run check:ai`              | OpenRouter credential/capability check without inference                    |
+| `npm run check:ai`              | Gemini key/model/capacity check without inference                           |
 | `npm run typecheck`             | TypeScript check without emitting files                                     |
 | `npm run lint`                  | ESLint                                                                      |
 | `npm test`                      | Unit, integration, and static migration checks                              |
@@ -229,7 +227,7 @@ Server functions are grouped into `intake.functions.ts`, `planning.functions.ts`
 
 ## Testing
 
-Ordinary tests cover output normalization, graph validation, frontier behavior, strategy scope, progress, diffs, idempotency, quotas, auth errors, transactional execution handling, a deterministic workflow harness, and OpenRouter transport with mocked HTTP. Migration tests inspect SQL; they do not prove a remote schema is installed.
+Ordinary tests cover output normalization, graph validation, frontier behavior, strategy scope, progress, diffs, idempotency, quotas, auth errors, transactional execution handling, a deterministic workflow harness, and direct Gemini transport with mocked HTTP. Migration tests inspect SQL; they do not prove a remote schema is installed.
 
 ```powershell
 npm run typecheck
@@ -250,7 +248,7 @@ These use the primary Supabase credentials and disposable users. Gates are off b
 | `RUN_SUPABASE_RLS_TESTS=true` | Real database ownership, isolation, rollback, and concurrency checks                        |
 | `RUN_E2E_GOLDEN=true`         | Authenticated browser workflow, user isolation, generated confirmation-link callback        |
 | `RUN_E2E_SCENARIOS=true`      | Planning scenarios; use a live-configured target for real inference evidence                |
-| `RUN_LIVE_AI_SMOKE=true`      | Small real OpenRouter request; test explicitly selects live mode                            |
+| `RUN_LIVE_AI_SMOKE=true`      | Small real Gemini request; requires verified Free Tier before live mode                     |
 | `RUN_E2E_SIGNUP=true`         | Public signup; also requires an authorized `E2E_SIGNUP_EMAIL_TEMPLATE` containing `{runId}` |
 
 Example database and authenticated browser checks using mock inference:
@@ -295,14 +293,14 @@ This repository is connected to Lovable. Keep pushed commits working and preserv
 | Confirmation email rejected/delayed        | Delivery/SMTP configuration and limits; callback tests do not prove inbox delivery       |
 | Missing database RPC                       | Installed migration history versus checked-in migrations; apply reviewed missing changes |
 | Unexpected mock label                      | Explicit `AI_PROVIDER_MODE=live` on the target server; restart after changes             |
-| Live AI unavailable                        | Exact key/model names, enabled flag, credits, application quotas                         |
-| Model capability check fails               | Model must support both required structured-output parameters                            |
+| Live AI unavailable                        | GEMINI key/model, verified Free Tier, provider and application quotas                    |
+| Model capability check fails               | Approved model must support structured JSON and sufficient output tokens                 |
 | Action cannot start/complete               | Hard prerequisites must be `DONE`; skipping does not unblock dependents                  |
 | Demo progress not saved                    | Browser local storage availability; Reset demo clears example progress                   |
 
 ## Current limitations and release evidence
 
-The latest [free AI verification](docs/FREE_AI_VERIFICATION.md) records **69 automated passes, one optional skip, two passing desktop/mobile workspace checks, and one failed live free planning journey**. The free router produced valid structured intake at zero cost but the plan request was rate limited; no full free graph, progress or replan acceptance is claimed. Earlier paid-model staged results remain historical. The owner controls the single Vercel model-variable update and must confirm it is saved before another deployment. No Vercel changes or deployments were made for this task. [Public Production](https://reversepath-vibesprint.vercel.app) remains the existing rollback baseline. Actual email receipt and release-candidate Google return remain release gates. Main is the only branch. See [release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md), the [completion audit](docs/FINAL_PROJECT_COMPLETION.md), and [pending actions](docs/PENDING_ISSUES.md).
+The current [Gemini verification](docs/GEMINI_VERIFICATION.md) records the complete real Gemini Free Tier acceptance, including generated graph persistence, action/progress refresh and rejected/accepted revisions. The owner confirmed Free Tier with no paid billing and previously verified Google OAuth and real email/password signup, receipt, callback and re-login. Authentication setup was not repeated. Earlier provider reports remain historical. Vercel and [public Production](https://reversepath-vibesprint.vercel.app) are unchanged. The next step is the owner’s manual Gemini environment update and confirmation; no deployment was performed.
 
 The graph UI presents grouped plan content and dependencies rather than a draggable canvas. Mock proposals are generic fixtures. Live replanning receives the previous snapshot for continuity, but persistence creates new nodes with pending status rather than automatically transferring completion state. Storage has no upload UI. Settings export planning data; they do not implement account deletion or export all operational records.
 
@@ -314,7 +312,7 @@ See [pending issues](docs/PENDING_ISSUES.md) for recorded maintenance items. Old
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | [Simple architecture](docs/SIMPLE_ARCHITECTURE.md)                              | Short request-flow and operational overview                         |
 | [Environment checklist](docs/VERCEL_ENV_SETUP.md)                               | Hosting setup; note runtime-control corrections above               |
-| [Configuration report](docs/FINAL_CONFIGURATION_REPORT.md)                      | Recorded configuration and checks                                   |
+| [Historical configuration report](docs/FINAL_CONFIGURATION_REPORT.md)           | Recorded configuration and checks                                   |
 | [Release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md)                 | Dated hosted results, blockers, rollback context                    |
 | [Pending issues](docs/PENDING_ISSUES.md)                                        | Release and maintenance follow-ups                                  |
 | [Route conventions](src/routes/README.md)                                       | Routing and generated-tree conventions                              |

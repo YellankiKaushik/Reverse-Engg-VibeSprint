@@ -1,6 +1,6 @@
 import { loadEnv } from "vite";
 import { existsSync, readFileSync } from "node:fs";
-import { isFreeModelId } from "../src/lib/free-ai-policy.ts";
+import { isAllowedGeminiModel } from "../src/lib/gemini-policy.ts";
 
 const env = loadEnv("production", process.cwd(), "");
 const required = [
@@ -16,12 +16,11 @@ if (!["mock", "live"].includes(mode)) errors.push("AI_PROVIDER_MODE must be mock
 if (env.VITE_AUTH_PROVIDER && env.VITE_AUTH_PROVIDER !== "supabase")
     errors.push("VITE_AUTH_PROVIDER must be supabase (or unset)");
 if (mode === "live") {
-    for (const name of ["OPENROUTER_API_KEY", "OPENROUTER_MODEL_DEFAULT"])
+    for (const name of ["GEMINI_API_KEY", "GEMINI_MODEL_DEFAULT"])
         if (!env[name]?.trim()) errors.push(`${name} is required for live AI`);
-    if (env.OPENROUTER_ENABLED === "false") errors.push("OPENROUTER_ENABLED disables live AI");
-    if (env.OPENROUTER_MODEL_DEFAULT && !isFreeModelId(env.OPENROUTER_MODEL_DEFAULT))
+    if (env.GEMINI_MODEL_DEFAULT && !isAllowedGeminiModel(env.GEMINI_MODEL_DEFAULT))
         errors.push(
-            "OPENROUTER_MODEL_DEFAULT must be a verified free model; paid inference is disabled",
+            "GEMINI_MODEL_DEFAULT must be an approved free-tier model; keep the project on Free Tier",
         );
 }
 for (const file of [".env", ".env.local", ".env.production", ".env.production.local"]) {
@@ -78,13 +77,13 @@ for (const name of ["VITE_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_PUBLISHABLE_KEY"]
     }
 }
 const obsoleteNames = Object.keys(env).filter((name) =>
-    /^(GEMINI_|GROQ_|OPENAI_|LOVABLE_|AI_ROUTE_|AI_PROVIDER_ALLOWLIST$|SUPABASE_TEST_|VITE_SUPABASE_PROJECT_ID$|OBJECT_STORAGE_PROVIDER$)/.test(
+    /^(OPENROUTER_|GROQ_|OPENAI_|LOVABLE_|AI_ROUTE_|AI_PROVIDER_ALLOWLIST$|SUPABASE_TEST_|VITE_SUPABASE_PROJECT_ID$|OBJECT_STORAGE_PROVIDER$)/.test(
         name,
     ),
 );
 if (obsoleteNames.length)
     console.log(`Ignored legacy settings (not needed): ${obsoleteNames.join(", ")}`);
-console.log(`AI provider: OpenRouter; mode: ${mode}`);
+console.log(`AI provider: direct Gemini; mode: ${mode}`);
 if (mode === "mock") console.log("Mock AI is enabled: no live generation is claimed.");
 if (errors.length) {
     for (const error of errors) console.error(error);

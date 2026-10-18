@@ -75,7 +75,7 @@ for (const scenario of scenarios) {
             }
             await page.getByRole("button", { name: /generate plan/i }).click();
             await expect(page.getByText(/plan generated/i)).toBeVisible({ timeout: 150_000 });
-            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
+            await expect(page.getByText(/Live AI plan · gemini ·/)).toBeVisible();
             const cases = await admin.from("intake_cases").select("id").eq("user_id", userId);
             expect(cases.data).toHaveLength(1);
             const plan = await admin
@@ -117,7 +117,7 @@ for (const scenario of scenarios) {
                 .eq("user_id", userId);
             expect(actions.data!.every((a) => a.completion_criteria.trim().length > 0)).toBe(true);
             await page.reload();
-            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
+            await expect(page.getByText(/Live AI plan · gemini ·/)).toBeVisible();
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
             const progressPanel = page
                 .locator("div.panel")
@@ -138,7 +138,7 @@ for (const scenario of scenarios) {
             expect(completedActions.data!.length).toBeGreaterThan(0);
             await page.reload();
             await expect(progressPanel).toHaveText(completedProgress);
-            await expect(page.getByText(/Live AI plan · openrouter ·/)).toBeVisible();
+            await expect(page.getByText(/Live AI plan · gemini ·/)).toBeVisible();
             await page.setViewportSize({ width: 390, height: 844 });
             await expect(progressPanel).toBeVisible();
             expect(
