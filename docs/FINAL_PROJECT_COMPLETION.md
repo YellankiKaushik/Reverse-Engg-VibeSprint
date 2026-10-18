@@ -1,8 +1,16 @@
 # ReversePath final completion audit
 
-October 17, 2026 — Asia/Calcutta.
+Updated October 18, 2026 — Asia/Calcutta.
 
 **REVERSEPATH FINALIZATION BLOCKED**
+
+## Latest Google OAuth fix — October 18, 2026
+
+The targeted callback/session fix is pushed to main at `bcd234503cc82de465615f45c5acad78cc97d05c` and deployed to the [new READY Preview](https://reversepath-vibesprint-1dl3py5y4-kaushik-yellanki-project.vercel.app), deployment `dpl_GAj6YD5ppfSjwUy2Zg6eXgPyocx8`. Hosted auth regressions: **14 passed**; auth unit tests: **9 passed**; local browser checks: **15 passed**. Typecheck, production-mode build, lint (six existing warnings), source/client secret scans, and bounded Preview runtime-error checks pass.
+
+The earlier Preview origin and `/auth` redirect are now accepted by Supabase, superseding the October 17 result below. The **new** Preview `/auth` redirect is not yet allowlisted and currently falls back to Production. Add the exact new origin and its `/**` entry in the existing project's Auth URL Configuration. Real Google account selection/return remains **BLOCKED**, while genuine Supabase callback sessions, dashboard navigation, refresh persistence, logout, password login, and cross-user denial pass on the new Preview. Google login is not claimed as fully verified.
+
+Production remains unchanged at `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`, deployment/rollback `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`. Real signup inbox verification and the remaining Production release gates are still blocked. Full evidence, root-cause limits, changed files, and exact manual actions are in [GOOGLE_OAUTH_FIX.md](GOOGLE_OAUTH_FIX.md). Subsequent changes for this update are documentation only. Older attempt records below remain historical.
 
 ## Latest Production-only attempt — October 17, 2026
 
