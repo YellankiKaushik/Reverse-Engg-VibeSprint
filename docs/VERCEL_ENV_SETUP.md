@@ -1,6 +1,6 @@
 # Vercel environment setup
 
-The verified migration uses **Supabase + direct Gemini + Vercel**. The complete real Gemini Free Tier Golden Path has passed locally. Keep the existing project and public deployment. The owner must manually update the variables below and confirm before any Preview or Production deployment.
+The verified migration uses **Supabase + direct Gemini + Vercel**. The complete real Gemini Free Tier Golden Path has passed locally. Keep the existing project and public deployment. The owner’s manual variable update has been privately verified for both targets. The new Preview is deployed; Production is held on its new authentication redirect gate. See [current hosted verification](PRODUCTION_RELEASE_VERIFICATION.md).
 
 ## Required configuration
 
@@ -23,9 +23,9 @@ Google documents free-tier pricing and structured outputs for gemini-3.8-flash. 
 
 The owner confirmed Free Tier, the available "Set up billing" option, and no paid billing enabled. The first current availability probe returned 503; the second passed after 2.1 seconds of backoff. The complete real Golden Path then passed using gemini-3.8-flash, including bounded recovery from one further replan 503. No 3.6 inference or other provider was needed. Remaining project quota is not exposed by the catalog and is not claimed. See [Gemini verification](GEMINI_VERIFICATION.md).
 
-## Future owner update
+## Owner update completed and verified
 
-The owner can now manually add/change these server variables in both Preview and Production, without triggering a deployment yet:
+These server variables have already been saved and privately verified in both Preview and Production; no repeat setup is requested:
 
 ```dotenv
 GEMINI_API_KEY=<existing private key>
@@ -39,10 +39,10 @@ Preserve Supabase settings; the eventual live target uses AI_PROVIDER_MODE=live.
 - OPENROUTER_MODEL_DEFAULT
 - OPENROUTER_ENABLED
 
-Role-specific OpenRouter variables are also unused. Preserve rollback access until release acceptance; existing deployments still contain the old implementation. No hosting settings were changed in this task.
+Role-specific OpenRouter variables are also unused. Preserve rollback access until release acceptance; existing deployments still contain the old implementation. No environment variables or protection settings were changed by the agent. A new Preview was deployed; public Production remains unchanged.
 
 ## Optional controls
 
 Keep only controls you use: AI_PROVIDER_TIMEOUT_MS (90000; maximum 300000), AI_PROVIDER_MAX_RETRIES (0; maximum 2), AI_MAX_OUTPUT_TOKENS (12000; range 256–16384), shared/operation-specific daily limits, and SUPABASE_STORAGE_BUCKET. Defaults remain 20 intake and 10 plan/replan requests per user per day, per operation. Only 503/429 are eligible for opt-in retries, with at most three total attempts, approximately 2/5-second backoff plus jitter, and Retry-After respected. A cooldown longer than 60 seconds ends the request. 400/401/403, configuration, schema and graph errors are not blindly retried. The successful controlled run used AI_PROVIDER_MAX_RETRIES=2; setting this existing optional control to 2 reproduces that bounded retry policy. No additional environment variable was introduced. VITE_AUTH_PROVIDER=supabase is optional; APP_ENV and PUBLIC_APP_URL are not required for routing or authentication.
 
-Test gates belong in controlled local testing. Run configuration checks, typecheck, lint, tests, the Vercel build, audit and secret scanner. The local real intake → plan → validate → save → strategy/action/progress/refresh → check-in → real replan → reject and accept revisions has passed. Hosted verification still follows the owner’s variable-save confirmation. Mock passes do not replace real acceptance. Historical provider reports remain historical.
+Test gates belong in controlled local testing. Run configuration checks, typecheck, lint, tests, the Vercel build, audit and secret scanner. The local real intake → plan → validate → save → strategy/action/progress/refresh → check-in → real replan → reject and accept revisions has passed. Hosted Gemini verification now passes; the new Preview redirect allowlist and Google account-return acceptance remain release gates. Mock passes do not replace real acceptance. Historical provider reports remain historical.

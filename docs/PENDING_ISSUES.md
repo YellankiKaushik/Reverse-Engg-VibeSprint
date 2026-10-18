@@ -1,5 +1,34 @@
 # Pending issues
 
+## Hosted release verification — October 19, 2026
+
+**PRODUCTION RELEASE BLOCKED — hosted Gemini workflow verified; new Preview authentication redirect gate remains open.**
+
+- Existing project: prj_McY3U5riuZN49HM72w9Bv7Ng0J1M. Preview deployment: **dpl_G7h3S3Q6TLiYRhjVjmXKWNobQ5v8**, READY, [Preview](https://reversepath-vibesprint-rcsecgaua-kaushik-yellanki-project.vercel.app). Verified source: **8b46434cf02fb59b06417d3e5923e845f8af4707**, main.
+- Owner-updated Preview and Production configuration was privately verified: the existing Gemini key, gemini-3.8-flash, live mode, retries 2, all five Supabase variables, matching URL/key pairs, no OpenRouter variables and no private values in VITE_* variables. Keys match the accepted local Free Tier project. Billing and auth policies were not changed.
+- Hosted browser suite: **19 passed, one failed**. The real Gemini Golden Path passed: intake, compact plan, original Zod/graph validation, atomic save/activation, strategy changes, action completion, progress refresh, check-in, two real replans, revision rejection/acceptance, and refreshed active-version pointer. Three versions remain, one rejected and exactly one active v3. No mocked Gemini response was used.
+- Initial hosted graph: **13 nodes, 13 edges, two strategies, four recommended milestones and six executable actions/experiments**. Six successful AI operations used **7,379 input / 13,230 output tokens**; every successful output finished STOP and passed its schema. Runtime graph validation passed for the plan and both replans.
+- Password login/logout/re-login, session restoration, cross-user denial, desktop/mobile workspace, mobile demo, provider initiation and safe callback errors passed. Real Google account selection/return on this new Preview was not performed: the available browser has no signed-in authorized Google account. Owner's earlier Google/inbox confirmations remain historical MANUAL PASS evidence, not a fresh Google round-trip result here.
+- The sole automated failure is the genuine confirmation-link redirect. Independent disposable probes for both the Preview root and /auth returned HTTP 303 to **https://reversepath-vibesprint.vercel.app/**, instead of Preview. This is a Supabase redirect-allowlist blocker, not a demonstrated Gemini or persistence defect. No confirmation email was sent or inbox delivery re-tested.
+- Security: all **21 fetched hosted HTML/browser assets** returned 200; zero private-key or private-environment-identifier findings. Final filtered runtime logs: **zero error records, zero HTTP 5xx, zero secret matches**; six successful AI validation diagnostics. An intermediate planning diagnostic had no output; its upstream status was not logged, so no specific HTTP failure is inferred. Dependency audit: zero vulnerabilities. The unchanged source's accepted automated baseline remains **81 passed, one skipped**.
+- No database/schema, runtime source, dependency or authentication-policy changes were made during this release attempt. Deployment Protection stayed enabled. Short-lived origin-scoped Vercel identities accessed Preview; no share link or broader protection exception was created. Disposable account cleanup passed; two unrelated September fixtures were preserved.
+- **No new Production deployment or promotion was performed.** Current public Production and rollback: **dpl_DbZKsUNeizVEiAe7X8dM7tHEAe79**, source **80a4be968fd059c9dd55f7575612c5b5f04e16af**, [public URL](https://reversepath-vibesprint.vercel.app). Production smoke/Golden Path for the Gemini release remains NOT RUN; the public domain still serves the earlier source.
+
+### Consolidated remaining authentication action
+
+In the existing Supabase project **usvopldwiwzlvoqawvcu → Authentication → URL Configuration → Redirect URLs**, add both entries below. Keep the Site URL at https://reversepath-vibesprint.vercel.app and preserve existing Production/localhost entries. The exact origin covers the current root callback probe; the origin-scoped /** entry covers /auth and other Preview paths. No project-wide hostname wildcard is required.
+
+```text
+https://reversepath-vibesprint-rcsecgaua-kaushik-yellanki-project.vercel.app
+https://reversepath-vibesprint-rcsecgaua-kaushik-yellanki-project.vercel.app/**
+```
+
+Then complete Google sign-in on this Preview and confirm it returns to its authenticated dashboard (including logout/re-login). No authorized Auth-configuration write connection is available here, so these settings were not altered. After this action, rerun only the affected callback acceptance, verify Google completion, then stage the Production build with Production variables, test it, promote that exact staged build and run public Production acceptance. Preserve the recorded rollback deployment.
+
+Known Free Tier limitation: transient provider unavailability/rate limits may occur. Existing retries remain bounded to at most three attempts for 503/429; saved plans remain usable during inference failures. No billing, paid inference, alternate provider or credit purchase is authorized or introduced.
+
+The sections below record earlier verification dates and must not override this latest hosted status.
+
 ## Current Gemini hosting gate — October 18, 2026
 
 The complete real Gemini Free Tier Golden Path passed locally with `gemini-3.8-flash`. The owner confirmed Free Tier with paid billing disabled. The current availability check succeeded on attempt two (503, then 200 after 2.1-second backoff); 3.6 was not used. Real intake, compact plan, Zod/graph validation, Supabase persistence/activation, strategy selection, action/progress refresh, check-in, two replans, rejection and acceptance all passed. Database refresh confirmed three versions, one rejected revision, exactly one active version (v3), and a matching active-version pointer.

@@ -1,6 +1,6 @@
 # ReversePath: simple architecture
 
-The verified migration uses **Supabase for authentication/data, direct Gemini for AI, and Vercel for hosting**. React, TanStack Start and Nitro remain the framework/runtime. The real Free Tier Golden Path passed locally. Hosted deployment awaits the owner’s manual Vercel environment update and confirmation.
+The verified migration uses **Supabase for authentication/data, direct Gemini for AI, and Vercel for hosting**. React, TanStack Start and Nitro remain the framework/runtime. The real Free Tier Golden Path passed locally. The owner’s Vercel environment update is verified and the real hosted Preview Golden Path passes. Production awaits the new Preview redirect allowlist and Google account-return acceptance; see [current release verification](PRODUCTION_RELEASE_VERIFICATION.md).
 
 ```mermaid
 flowchart LR

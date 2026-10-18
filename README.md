@@ -6,7 +6,7 @@ ReversePath turns a goal, problem, decision, or uncertain idea into a structured
 
 Built with React and TanStack Start, Supabase for authentication and persistent data, and the direct Google Gemini Developer API for live AI. Deterministic mock AI and a prepared offline demo are also included.
 
-**Gemini migration status — October 18, 2026:** The complete real Free Tier Golden Path passed with `gemini-3.8-flash`: intake, compact planning, validation, Supabase save/activation, strategy/action/progress/refresh, check-in, two real replans, rejection and acceptance, and active-version integrity. Availability recovered on attempt two after a bounded 503 retry. Vercel and public Production remain unchanged, awaiting the owner’s manual environment update. See [Gemini verification](docs/GEMINI_VERIFICATION.md).
+**Release status — October 19, 2026:** The [new hosted Preview](https://reversepath-vibesprint-rcsecgaua-kaushik-yellanki-project.vercel.app) serves verified source `8b46434`; real Gemini intake/planning/replanning, validation, Supabase persistence, action/progress refresh and revision acceptance passed. Hosted suite: **19 passed, one failed**. Supabase redirects for this new Preview fall back to Production, and a fresh Google account-return test remains required. Production is unchanged; see [current release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md).
 
 ## Features and workflow
 
@@ -300,7 +300,7 @@ This repository is connected to Lovable. Keep pushed commits working and preserv
 
 ## Current limitations and release evidence
 
-The current [Gemini verification](docs/GEMINI_VERIFICATION.md) records the complete real Gemini Free Tier acceptance, including generated graph persistence, action/progress refresh and rejected/accepted revisions. The owner confirmed Free Tier with no paid billing and previously verified Google OAuth and real email/password signup, receipt, callback and re-login. Authentication setup was not repeated. Earlier provider reports remain historical. Vercel and [public Production](https://reversepath-vibesprint.vercel.app) are unchanged. The next step is the owner’s manual Gemini environment update and confirmation; no deployment was performed.
+The [current release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md) records the hosted Preview's real Gemini Golden Path PASS and remaining authentication gate. The owner’s Vercel variable update is complete and privately verified; no variable re-entry is requested. The new Preview's root and /auth callbacks currently redirect to Production. Add its exact origin and origin-scoped /** entry to Supabase Redirect URLs, then verify Google account return on that Preview. The existing [public Production](https://reversepath-vibesprint.vercel.app) deployment is preserved. No Production deployment or promotion occurred.
 
 The graph UI presents grouped plan content and dependencies rather than a draggable canvas. Mock proposals are generic fixtures. Live replanning receives the previous snapshot for continuity, but persistence creates new nodes with pending status rather than automatically transferring completion state. Storage has no upload UI. Settings export planning data; they do not implement account deletion or export all operational records.
 
