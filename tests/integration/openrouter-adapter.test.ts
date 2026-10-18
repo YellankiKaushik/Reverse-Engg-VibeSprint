@@ -12,7 +12,7 @@ it("sends authenticated schema generation to the OpenRouter endpoint", async () 
     vi.stubEnv("AI_PROVIDER_MODE", "live");
     vi.stubEnv("OPENROUTER_ENABLED", "true");
     vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
-    vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test-model");
+    vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test/model:free");
     const mockFetch = vi.fn(
         async () =>
             new Response(
@@ -20,7 +20,7 @@ it("sends authenticated schema generation to the OpenRouter endpoint", async () 
                     id: "chatcmpl-test",
                     object: "chat.completion",
                     created: 1,
-                    model: "test-model",
+                    model: "test/model:free",
                     choices: [
                         {
                             index: 0,
@@ -48,4 +48,11 @@ it("sends authenticated schema generation to the OpenRouter endpoint", async () 
     expect(new Headers(init.headers).get("authorization")).toBe("Bearer test-private-key");
     expect(JSON.parse(String(init.body)).response_format.type).toBe("json_schema");
     expect(JSON.parse(String(init.body)).provider.require_parameters).toBe(true);
+    expect(JSON.parse(String(init.body)).provider.allow_fallbacks).toBe(false);
+    expect(JSON.parse(String(init.body)).provider.max_price).toEqual({
+        prompt: 0,
+        completion: 0,
+        request: 0,
+        image: 0,
+    });
 });

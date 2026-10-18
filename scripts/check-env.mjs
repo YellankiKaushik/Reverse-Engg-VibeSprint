@@ -1,5 +1,6 @@
 import { loadEnv } from "vite";
 import { existsSync, readFileSync } from "node:fs";
+import { isFreeModelId } from "../src/lib/free-ai-policy.ts";
 
 const env = loadEnv("production", process.cwd(), "");
 const required = [
@@ -18,6 +19,10 @@ if (mode === "live") {
     for (const name of ["OPENROUTER_API_KEY", "OPENROUTER_MODEL_DEFAULT"])
         if (!env[name]?.trim()) errors.push(`${name} is required for live AI`);
     if (env.OPENROUTER_ENABLED === "false") errors.push("OPENROUTER_ENABLED disables live AI");
+    if (env.OPENROUTER_MODEL_DEFAULT && !isFreeModelId(env.OPENROUTER_MODEL_DEFAULT))
+        errors.push(
+            "OPENROUTER_MODEL_DEFAULT must be a verified free model; paid inference is disabled",
+        );
 }
 for (const file of [".env", ".env.local", ".env.production", ".env.production.local"]) {
     if (!existsSync(file)) continue;

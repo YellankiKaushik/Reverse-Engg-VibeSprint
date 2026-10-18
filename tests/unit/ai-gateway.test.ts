@@ -32,13 +32,19 @@ describe("OpenRouter configuration", () => {
     it("uses one OpenRouter model for all roles", () => {
         vi.stubEnv("AI_PROVIDER_MODE", "live");
         vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
-        vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test/model");
+        vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "test/model:free");
         for (const alias of MODEL_ALIASES) {
             const candidate = candidateForAlias(alias);
             expect(candidate?.providerId).toBe("openrouter");
-            expect(candidate?.modelId).toBe("test/model");
+            expect(candidate?.modelId).toBe("test/model:free");
             expect(candidate?.modelAlias).toBe(alias);
         }
+    });
+    it("refuses a paid model even with valid live configuration", () => {
+        vi.stubEnv("AI_PROVIDER_MODE", "live");
+        vi.stubEnv("OPENROUTER_API_KEY", "test-private-key");
+        vi.stubEnv("OPENROUTER_MODEL_DEFAULT", "openai/gpt-4.1-mini");
+        expect(candidateForAlias("PRIMARY")).toBeUndefined();
     });
     it("requires both the OpenRouter key and model", () => {
         vi.stubEnv("AI_PROVIDER_MODE", "live");

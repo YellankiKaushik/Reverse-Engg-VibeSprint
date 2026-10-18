@@ -1,5 +1,15 @@
 # Production release verification
 
+## Current free-only release preparation — October 18, 2026
+
+**FREE_MODEL_INCOMPATIBLE — acceptance incomplete because the free provider could not generate the plan during testing.** `openrouter/free` passed actual zero-cost structured intake; the next plan call returned provider error 429 in HTTP 200. Nex's requested exact ID was absent and NVIDIA 3.5 returned 502. Four live requests were made; no paid request/fallback was introduced. Full free planning, graph persistence and replanning are not verified by historical paid-model results below.
+
+New source applies a free-ID guard, zero-price caps, required parameter enforcement, no provider fallback and bounded retries including embedded 402/429 failures. Local model candidate is `openrouter/free`; credentials, Supabase settings and pre-existing local provider mode are preserved. No Vercel variables, deployments or aliases changed. Deployment must await the owner's model-variable save confirmation and complete live acceptance; Production promotion remains prohibited while gates are blocked.
+
+**Results:** 69 automated passed, zero failed, one optional live-smoke skipped; two real-Supabase desktop/mobile workspace checks passed; one free live golden journey failed before plan persistence. Typecheck/build/scans/audit pass; lint has six existing warnings. Real database action/graph/isolation tests use fixture proposals, not live free output. See [FREE_AI_VERIFICATION.md](FREE_AI_VERIFICATION.md) for pricing, serving endpoint, current free limits and detailed scope.
+
+Public Production/rollback: `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`, [existing public domain](https://reversepath-vibesprint.vercel.app). Staged `dpl_7st1sGRtjza4EbR245Z7S3uty6qi` remains unpromoted and predates these changes. Actual mailbox receipt and candidate Google account return remain unverified. Earlier paid-credit instructions are historical; no purchase is requested.
+
 ## Latest authorized staged browser results — October 18, 2026
 
 **STAGED BROWSER ACCEPTANCE PERFORMED — PRODUCTION PROMOTION REMAINS BLOCKED.** This section supersedes the access/redirect blockers and Preview-only scope in the earlier record below.

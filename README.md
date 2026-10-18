@@ -6,6 +6,8 @@ ReversePath turns a goal, problem, decision, or uncertain idea into a structured
 
 Built with React and TanStack Start, Supabase for authentication and persistent data, and OpenRouter for live AI inference. Deterministic mock AI and a prepared offline demo are also included.
 
+**Free AI release status — October 18, 2026:** the local candidate is `openrouter/free`, with zero-price request constraints and paid inference disabled in the new source. Real structured intake passed at $0; plan generation hit a provider rate limit. Full free planning/replanning acceptance remains blocked. Vercel settings and deployments are unchanged. See [free AI verification](docs/FREE_AI_VERIFICATION.md).
+
 ## Features and workflow
 
 1. **Describe an objective.** Intake classifies the intent and derives a title, desired outcome, success criteria, clarity score, and any stated time horizon.
@@ -115,17 +117,17 @@ Configure these values privately in `.env`:
 ```dotenv
 AI_PROVIDER_MODE=live
 OPENROUTER_API_KEY=<your-openrouter-key>
-OPENROUTER_MODEL_DEFAULT=openai/gpt-4.1-mini
+OPENROUTER_MODEL_DEFAULT=openrouter/free
 ```
 
-The model above is recorded in the repository's verification reports. Validate your selected model against the current catalog:
+This free-router candidate supports structured output but has not passed the full planning journey. Paid model IDs are rejected; there is no paid fallback. Validate current zero pricing and actual serving-endpoint capabilities:
 
 ```powershell
 npm run check:env
 npm run check:ai
 ```
 
-`check:ai` contacts OpenRouter to validate the key and check `structured_outputs` and `response_format` support. It does not generate text. Restart the development server after configuration changes. Missing or unrecognized runtime modes default to mock; `check:env` rejects invalid mode names.
+`check:ai` validates the key, zero catalog/endpoint pricing, `structured_outputs`, `response_format` and output-token capacity. It does not generate text or prove current provider capacity. Every live request enforces zero maximum prices, required parameters and disabled provider fallback. HTTP 402/429 surface safe errors without automatic retries; saved data remains accessible with Supabase connectivity. Free limits and model availability/pricing can change. See [limits, actual results and how to change the model](docs/FREE_AI_VERIFICATION.md). Restart the development server after configuration changes. Missing or unrecognized runtime modes default to mock; `check:env` rejects invalid mode names.
 
 ### Optional runtime controls
 
@@ -300,7 +302,7 @@ This repository is connected to Lovable. Keep pushed commits working and preserv
 
 ## Current limitations and release evidence
 
-The [October 18 release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md) records 60 automated passes and subsequent staged browser acceptance: **21 distinct checks passed, two AI scenarios failed because OpenRouter returned insufficient-credit errors, and two gated checks were skipped**. The owner verified Google login on the latest Preview. The [READY staged Production candidate](https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app) passes real planning/replanning, persistence, desktop/mobile workspace, security, and genuine confirmation/session callback checks; its redirect allowlist now passes. Confidential temporary test access was revoked. It has **not** replaced [public Production](https://reversepath-vibesprint.vercel.app): restore usable OpenRouter credits, confirm actual email receipt, and complete the staged Google account test before release. Main is the only branch. See the [completion audit](docs/FINAL_PROJECT_COMPLETION.md) and [pending actions](docs/PENDING_ISSUES.md) for current scopes and results.
+The latest [free AI verification](docs/FREE_AI_VERIFICATION.md) records **69 automated passes, one optional skip, two passing desktop/mobile workspace checks, and one failed live free planning journey**. The free router produced valid structured intake at zero cost but the plan request was rate limited; no full free graph, progress or replan acceptance is claimed. Earlier paid-model staged results remain historical. The owner controls the single Vercel model-variable update and must confirm it is saved before another deployment. No Vercel changes or deployments were made for this task. [Public Production](https://reversepath-vibesprint.vercel.app) remains the existing rollback baseline. Actual email receipt and release-candidate Google return remain release gates. Main is the only branch. See [release verification](docs/PRODUCTION_RELEASE_VERIFICATION.md), the [completion audit](docs/FINAL_PROJECT_COMPLETION.md), and [pending actions](docs/PENDING_ISSUES.md).
 
 The graph UI presents grouped plan content and dependencies rather than a draggable canvas. Mock proposals are generic fixtures. Live replanning receives the previous snapshot for continuity, but persistence creates new nodes with pending status rather than automatically transferring completion state. Storage has no upload UI. Settings export planning data; they do not implement account deletion or export all operational records.
 

@@ -1,5 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModel } from "ai";
+import { enforceFreeRequest, isFreeModelId } from "./free-ai-policy";
 
 export const MODEL_ALIASES = ["FAST", "PRIMARY", "CRITIC", "FALLBACK"] as const;
 export type ModelAlias = (typeof MODEL_ALIASES)[number];
@@ -48,12 +49,14 @@ export function candidateForAlias(alias: ModelAlias): AiProviderCandidate | unde
     if (isMockAiEnabled() || process.env["OPENROUTER_ENABLED"] === "false") return undefined;
     const apiKey = process.env["OPENROUTER_API_KEY"]?.trim();
     const modelId = process.env["OPENROUTER_MODEL_DEFAULT"]?.trim();
-    if (!apiKey || !modelId) return undefined;
+    if (!apiKey || !modelId || !isFreeModelId(modelId)) return undefined;
     const provider = createOpenAICompatible({
         name: "openrouter",
         baseURL: OPENROUTER_ENDPOINT,
         apiKey,
         supportsStructuredOutputs: true,
+        // Applied after caller options, so they cannot override the zero-price cap.
+        transformRequestBody: (body) => enforceFreeRequest(modelId, body),
         headers: {
             "X-OpenRouter-Title": "ReversePath",
             ...(process.env["PUBLIC_APP_URL"]
@@ -85,8 +88,26 @@ export interface AiFailure {
 /** Maps gateway/provider failures onto the documented error model. */
 export function classifyAiError(error: unknown): AiFailure {
     const anyErr = error as
-        { statusCode?: number; status?: number; name?: string; message?: string } | undefined;
-    const status = anyErr?.statusCode ?? anyErr?.status;
+        | {
+              statusCode?: number;
+              status?: number;
+              name?: string;
+              message?: string;
+              responseBody?: string;
+          }
+        | undefined;
+    let status = anyErr?.statusCode ?? anyErr?.status;
+    // OpenRouter can send a provider failure inside an HTTP 200 JSON body.
+    // Read only its numeric status; never expose the raw response or metadata.
+    if (status === 200 && anyErr?.responseBody) {
+        try {
+            const code: unknown = JSON.parse(anyErr.responseBody)?.error?.code;
+            if (typeof code === "number" && Number.isInteger(code) && code >= 400 && code <= 599)
+                status = code;
+        } catch {
+            // Malformed responses continue through the existing safe error mapping.
+        }
+    }
     const message = anyErr?.message ?? "The planning engine could not complete this request.";
 
     if (status === 429)
@@ -99,7 +120,7 @@ export function classifyAiError(error: unknown): AiFailure {
         return {
             code: "AI_BUDGET_EXCEEDED",
             message:
-                "This workspace is out of AI credits, so new plans cannot be generated. Saved plans still work.",
+                "Free AI is unavailable for this account right now. Check the account's free access and quota. Saved plans still work.",
             retryable: false,
         };
     if (status === 403)

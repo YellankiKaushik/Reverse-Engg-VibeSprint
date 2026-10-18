@@ -4,6 +4,8 @@ Use the existing **reversepath-vibesprint** project. This is the single current 
 
 The app uses Supabase, OpenRouter, and Vercel. The OpenRouter endpoint is fixed to `https://openrouter.ai/api/v1`; all AI roles use one model. Never paste private keys into chat, source files, `.env.example`, or a `VITE_*` variable.
 
+**October 18 free-only update:** local candidate `openrouter/free` passed pricing/capability checks and real structured intake, but full plan generation was rate limited. It is not release-accepted. The owner will manually save `OPENROUTER_MODEL_DEFAULT=openrouter/free` for Preview and Production; no deployment is authorized until that save is confirmed. Do not change keys or other variables for this update. See [actual results and free limits](FREE_AI_VERIFICATION.md). Existing deployments predate the new free-only enforcement.
+
 ## Required variables
 
 These eight names are sufficient for live inference and the application's authentication/data operations. For mock-only local work, the last three can be omitted because mock is the safe default.
@@ -16,8 +18,8 @@ These eight names are sufficient for live inference and the application's authen
 | `SUPABASE_PUBLISHABLE_KEY`      | Server config, not secret | Same publishable key                                      | Yes                    | Production + Preview | Same as `VITE_SUPABASE_PUBLISHABLE_KEY` | Server queries execute with the user's JWT and RLS                  |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Private Secret            | New project's `sb_secret_` key or legacy service-role JWT | Yes                    | Production + Preview | Separate server credential              | Trusted telemetry, quotas, idempotency; test administration locally |
 | `OPENROUTER_API_KEY`            | Private Secret            | OpenRouter key settings; existing local key               | Yes for live           | Production + Preview | Separate AI credential                  | Authenticates server-side OpenRouter requests                       |
-| `OPENROUTER_MODEL_DEFAULT`      | Server config, not secret | OpenRouter catalog; tested `openai/gpt-4.1-mini`          | Yes for live           | Production + Preview | One model for all roles                 | Structured intake, plans, and replans                               |
-| `AI_PROVIDER_MODE`              | Server config             | `live` for real AI, `mock` for deterministic examples     | Set `live` for real AI | Production + Preview | Same behavior in either environment     | Makes paid inference deliberate; defaults to mock                   |
+| `OPENROUTER_MODEL_DEFAULT`      | Server config, not secret | `openrouter/free` candidate; full plan acceptance blocked | Yes for live           | Production + Preview | One free model/router for all roles     | Structured intake, plans, and replans                               |
+| `AI_PROVIDER_MODE`              | Server config             | `live` for real AI, `mock` for deterministic examples     | Set `live` for real AI | Production + Preview | Same behavior in either environment     | Selects live free inference or explicit mock; defaults to mock      |
 
 There are **three unique credential values**: a Supabase publishable key (used under two names), a Supabase server secret, and an OpenRouter key. The two URL names identify the same project; they are not two services. Modern Supabase keys are supported. Never substitute a secret for a publishable key.
 
@@ -73,4 +75,4 @@ These variables are not inference/auth/storage configuration paths anymore. Old 
 
 Configuration cleanup did not change Vercel settings. A Preview has since been verified; see [release verification](PRODUCTION_RELEASE_VERIFICATION.md). Future production release: build with `npm run build:vercel`, test Preview, stage and test Production before promotion, retain the previous deployment, and push only verified source. No force push.
 
-Model compatibility is checked against the catalog and enforced with `provider.require_parameters=true`. See [OpenRouter structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs) and [authentication](https://openrouter.ai/docs/api/reference/authentication).
+Model compatibility and zero pricing are checked against the catalog and actual serving endpoints. Requests enforce `provider.require_parameters=true`, `allow_fallbacks=false`, and zero maximum prompt/completion/request/image prices. Paid model IDs and routing overrides are rejected. Limits and pricing can change; rerun checks and a real fictional planning journey before changing models. See [free AI verification](FREE_AI_VERIFICATION.md), [OpenRouter structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs) and [authentication](https://openrouter.ai/docs/api/reference/authentication).

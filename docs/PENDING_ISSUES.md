@@ -1,5 +1,16 @@
 # Pending issues
 
+## Current free AI gates — October 18, 2026
+
+This section supersedes instructions below to restore paid credits. **No purchase is required or authorized.**
+
+1. **FREE_MODEL_INCOMPATIBLE / full contract acceptance BLOCKED:** `openrouter/free` generated valid structured intake at zero cost, but actual plan generation hit a provider 429. Nex's exact free ID was absent; NVIDIA 3.5 returned 502. A complete free graph, progress and replan accept/reject journey remains unverified. Retest with fictional input when free capacity is available, within a bounded request budget; no paid fallback or schema relaxation.
+2. **Vercel update/deployment BLOCKED:** candidate value is `OPENROUTER_MODEL_DEFAULT=openrouter/free` for Preview and Production, controlled manually by the owner. No settings changed. Wait for confirmation that the variable is saved before any deployment. Current source adds the free-only caps; existing deployments do not contain them. A fresh Preview must pass hosted AI/persistence/progress/mobile/security acceptance before any Production release.
+3. **Actual email receipt BLOCKED:** await the owner's real mailbox confirmation. No simulated receipt is accepted.
+4. **Release-candidate Google return BLOCKED:** prior manual Preview existing-account PASS retains its scope. Complete the real sign-in → dashboard → refresh → logout → sign-in test on the eventual verified release candidate with an authorized account.
+
+Current verification: 69 automated passed, one optional live-smoke skipped; two workspace browser checks passed; one free live golden test failed at plan generation. No deployments, key changes or purchases. Public Production and its rollback deployment are preserved. See [free AI verification](FREE_AI_VERIFICATION.md). Earlier sections describe historical paid-model results.
+
 ## Latest staged acceptance — October 18, 2026
 
 Temporary browser access is **RESOLVED** under the owner's explicit deployment-specific approval. All grants were revoked; the final revoked link was rejected by a fresh request. Protection remains enabled. The staged origin and `/auth` redirect now both pass; no further redirect configuration is requested.

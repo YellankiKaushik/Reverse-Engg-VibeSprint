@@ -4,6 +4,16 @@ Updated October 18, 2026 — Asia/Calcutta.
 
 **REVERSEPATH FINALIZATION BLOCKED**
 
+## Latest free AI preparation — October 18, 2026
+
+**FREE_MODEL_INCOMPATIBLE — complete live planning acceptance blocked by provider availability/rate limits.** This section supersedes paid-credit restoration as the release path; no purchase is requested. Nex's exact free ID was absent, NVIDIA 3.5's free endpoint returned 502, and `openrouter/free` returned valid zero-cost structured intake but a provider 429 during plan generation. Four inference requests total; no paid fallback, new keys or accounts. Full free graph persistence, progress and replan accept/reject were not reached.
+
+New source enforces free model IDs, zero request-price caps, required schema parameters and disabled paid/provider fallback. Safe 402/429 handling also covers errors embedded in HTTP 200. Existing contracts, graph validation and Supabase protections remain. Local model changed to `openrouter/free`; existing credentials and local mock mode were preserved. Live tests explicitly enabled live mode.
+
+Verification: **69 automated PASS, 0 FAIL, 1 optional live-smoke SKIP; two desktop/mobile workspace PASS; one real free golden journey FAIL at plan generation**. Typecheck, lint (six existing warnings), Vercel build, secret scan and npm audit pass. Real Supabase persistence/action/isolation regressions use explicit fixture proposals and are not represented as free-model output acceptance. Current-attempt disposable fixtures were cleaned up.
+
+No Vercel environment settings or deployments changed. Owner confirmation that the single model variable is saved must precede deployment; complete free planning and hosted release acceptance still must pass. Production/rollback remains `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`. Existing staged deployment predates free-only enforcement and is unpromoted. Actual email receipt and candidate Google return remain separate gates. [Free AI verification](FREE_AI_VERIFICATION.md) records pricing, limits, exact configuration and all observed outcomes. Earlier results below are historical.
+
 ## Latest authorized staged browser acceptance — October 18, 2026
 
 The owner explicitly authorized confidential, deployment-specific temporary access to `dpl_7st1sGRtjza4EbR245Z7S3uty6qi`. The scoped CLI fallback succeeded after the connector account returned 403. Requested testing TTLs were 600 seconds for the broad run/retry and 120 seconds for the final callback checks. Each grant was explicitly revoked; a fresh request rejected the final revoked link. No confidential link was printed or persisted in source, docs, logs, or browser traces. Deployment Protection remains enabled for the project. Both staged origin and `/auth` redirects now pass.

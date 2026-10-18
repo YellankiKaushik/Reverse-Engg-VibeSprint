@@ -1,4 +1,5 @@
 import { loadEnv } from "vite";
+import { hasZeroPricing, isFreeModelId } from "../src/lib/free-ai-policy.ts";
 const env = loadEnv("production", process.cwd(), "");
 const key = env.OPENROUTER_API_KEY?.trim();
 const model = env.OPENROUTER_MODEL_DEFAULT?.trim();
@@ -8,6 +9,8 @@ async function check() {
         throw new ConfigurationError(
             "BLOCKED: OPENROUTER_API_KEY and OPENROUTER_MODEL_DEFAULT are required.",
         );
+    if (!isFreeModelId(model))
+        throw new ConfigurationError("FREE_MODEL_INCOMPATIBLE: paid model IDs are disabled.");
     const auth = await fetch("https://openrouter.ai/api/v1/key", {
         headers: { Authorization: "Bearer " + key },
         signal: AbortSignal.timeout(15000),
@@ -25,16 +28,55 @@ async function check() {
         throw new ConfigurationError(
             "MODEL_CHECK_BLOCKED: OpenRouter model catalog is unavailable.",
         );
-    const selected = (await catalog.json()).data?.find((entry) => entry.id === model);
+    const models = (await catalog.json()).data ?? [];
+    const selected = models.find((entry) => entry.id === model);
+    const outputTokens = Math.min(16384, Math.max(256, Number(env.AI_MAX_OUTPUT_TOKENS) || 12000));
     if (
+        !hasZeroPricing(selected?.pricing) ||
         !selected?.supported_parameters?.includes("structured_outputs") ||
         !selected.supported_parameters.includes("response_format")
     )
         throw new ConfigurationError(
-            "MODEL_INCOMPATIBLE: OPENROUTER_MODEL_DEFAULT must identify a model with structured_outputs and response_format support. Check the OpenRouter catalog; openai/gpt-4.1-mini is the tested option.",
+            "FREE_MODEL_INCOMPATIBLE: the catalog must list zero pricing and structured_outputs/response_format support.",
+        );
+    const pool =
+        model === "openrouter/free"
+            ? models.filter(
+                  (entry) =>
+                      isFreeModelId(entry.id) &&
+                      entry.id !== model &&
+                      hasZeroPricing(entry.pricing) &&
+                      entry.supported_parameters?.includes("structured_outputs") &&
+                      entry.supported_parameters?.includes("response_format") &&
+                      entry.top_provider?.max_completion_tokens >= outputTokens,
+              )
+            : [selected];
+    let endpointVerified = false;
+    for (const entry of pool) {
+        const response = await fetch(`https://openrouter.ai/api/v1/models/${entry.id}/endpoints`, {
+            signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) continue;
+        const endpoints = (await response.json()).data?.endpoints ?? [];
+        if (
+            endpoints.some(
+                (endpoint) =>
+                    hasZeroPricing(endpoint.pricing) &&
+                    endpoint.max_completion_tokens >= outputTokens &&
+                    endpoint.supported_parameters?.includes("structured_outputs") &&
+                    endpoint.supported_parameters?.includes("response_format"),
+            )
+        ) {
+            endpointVerified = true;
+            break;
+        }
+    }
+    if (!endpointVerified)
+        throw new ConfigurationError(
+            "FREE_MODEL_INCOMPATIBLE: no zero-price schema-capable serving endpoint supports the output budget.",
         );
     console.log(
-        "OpenRouter authentication and model compatibility passed: " +
+        "OpenRouter key, zero pricing, endpoint capabilities and output budget passed: " +
             model +
             ". No inference request was made.",
     );

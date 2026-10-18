@@ -94,7 +94,7 @@ async function callModel<S extends z.ZodType>(args: {
     const candidate = candidateForAlias(args.alias);
     if (!candidate) {
         const enriched = new Error(
-            "AI is unavailable. Configure OPENROUTER_API_KEY and OPENROUTER_MODEL_DEFAULT on the server.",
+            "Free AI is unavailable. Configure the existing OpenRouter key and a verified free OPENROUTER_MODEL_DEFAULT on the server.",
         ) as Error & {
             code: string;
             retryable: boolean;
@@ -174,7 +174,8 @@ async function callModel<S extends z.ZodType>(args: {
                 outcome: lastFailure.code,
                 retryable: lastFailure.retryable,
             });
-            if (!lastFailure.retryable) break;
+            // Repeating a free-tier 429 consumes quota and cannot fix a daily cap.
+            if (!lastFailure.retryable || lastFailure.code === "AI_RATE_LIMITED") break;
         }
     }
 
