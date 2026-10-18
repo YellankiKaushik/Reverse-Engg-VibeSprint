@@ -4,6 +4,18 @@ Updated October 18, 2026 — Asia/Calcutta.
 
 **REVERSEPATH FINALIZATION BLOCKED**
 
+## Latest authorized staged browser acceptance — October 18, 2026
+
+The owner explicitly authorized confidential, deployment-specific temporary access to `dpl_7st1sGRtjza4EbR245Z7S3uty6qi`. The scoped CLI fallback succeeded after the connector account returned 403. Requested testing TTLs were 600 seconds for the broad run/retry and 120 seconds for the final callback checks. Each grant was explicitly revoked; a fresh request rejected the final revoked link. No confidential link was printed or persisted in source, docs, logs, or browser traces. Deployment Protection remains enabled for the project. Both staged origin and `/auth` redirects now pass.
+
+**Distinct staged browser results: 21 passed, 2 failed, 2 skipped across runs.** The live golden journey and Career scenario passed; dashboard, real OpenRouter planning/replanning, Supabase persistence, strategy switching, actions/progress, desktop/mobile workspace, JSON export, demo, and cross-user protection pass. Seven final genuine confirmation/session/error/initiation checks pass, including refresh/logout/password reauthentication. A test-only fixture correction ensures callback arrivals create a fresh document. No application implementation changed.
+
+**New confirmed blocker: OpenRouter account credits.** The two failed scenarios (Startup, Learning) return `AI_BUDGET_EXCEEDED` on targeted retry. This is provider HTTP 402, not a missing API key or wrong model. The credit endpoint reports zero total credits and usage of $0.10893625; the key's remaining spending cap is not account balance. No further inference is attempted until usable credits are restored. Known recorded token usage from this attempt estimates $0.026058; failed requests do not provide complete usage. The account's cumulative reported usage remains below $2.
+
+Actual inbox receipt remains **EMAIL_DELIVERY_ACCEPTANCE BLOCKED** until the owner's manual result arrives. Real Google account return on the staged hostname remains unverified because no authorized Google browser session is available; the existing-account manual Preview PASS is preserved without extending its scope. The candidate is READY at source `80a4be968fd059c9dd55f7575612c5b5f04e16af`. Public Production still serves `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`, deployment/rollback `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`. No promotion occurred. Bounded staged runtime-error query: zero records in one hour. All fixtures from this attempt were cleaned up; older fixtures and real accounts were preserved.
+
+The [release verification](PRODUCTION_RELEASE_VERIFICATION.md) and [pending actions](PENDING_ISSUES.md) contain the current gates. Earlier sections below are historical. Main remains the only branch; final changes are tests and documentation only.
+
 ## Latest final release verification — October 18, 2026
 
 **APPLICATION VERIFIED ON PREVIEW; PRODUCTION CANDIDATE READY AND UNPROMOTED.** The owner supplied **MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT** on the latest Preview, including dashboard access, logout, reauthentication, and New Objective access. This result is limited to that account and Preview. Fresh checks retain the latest Preview and Production origins and `/auth` destinations.

@@ -1,5 +1,7 @@
 # Google OAuth callback investigation — October 18, 2026
 
+**Latest staged update:** authorized temporary access and the staged redirect allowlist now work. Seven staged callback/session checks passed, including genuine confirmation, refresh persistence, logout/password reauthentication, safe failures, and real Google initiation. Actual Google account selection/return on the staged hostname still requires an authorized Google browser session. Temporary grants were revoked; no confidential links are included here. [Current release status](PRODUCTION_RELEASE_VERIFICATION.md) also records the newly discovered OpenRouter-credit blocker and pending real email receipt.
+
 **Latest owner evidence: MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT.** The owner completed Google account selection, reached Your plans, signed out, reauthenticated with the same account, and accessed New Objective on the latest Preview. Fresh redirect probes now retain that Preview's origin and `/auth`. Other accounts, cross-browser behavior, and Google-specific refresh persistence are not inferred from this result. See [the latest release verification](PRODUCTION_RELEASE_VERIFICATION.md) for the staged Production candidate and remaining gates.
 
 The investigation below records the earlier state before that manual acceptance and redirect update; its Google/Preview blockers are historical.

@@ -1,5 +1,21 @@
 # Pending issues
 
+## Latest staged acceptance — October 18, 2026
+
+Temporary browser access is **RESOLVED** under the owner's explicit deployment-specific approval. All grants were revoked; the final revoked link was rejected by a fresh request. Protection remains enabled. The staged origin and `/auth` redirect now both pass; no further redirect configuration is requested.
+
+Current release blockers:
+
+1. **OpenRouter credits / remaining live scenarios: BLOCKED.** Startup and Learning retries return `AI_BUDGET_EXCEEDED`, corresponding to provider HTTP 402. The account credits endpoint reports `total_credits=0`, `total_usage=0.10893625`. The key's roughly $49.90 remaining spending cap is not available account credit. Restore usable credits in the existing OpenRouter account, then rerun only the two blocked scenarios. No API key, model, provider, or application setting was changed.
+2. **EMAIL_DELIVERY_ACCEPTANCE: BLOCKED pending owner evidence.** The owner will complete the real mailbox test. The genuine staged confirmation-link callback, password login, refresh, logout, and reauthentication pass automatically; these do not prove actual inbox receipt. Report actual receipt and the successful confirmation return without sharing email contents or callback URLs. Do not repeatedly resend.
+3. **Real staged Google account return: BLOCKED pending an authorized Google session.** Initiation reaches Google with the correct staged `/auth` destination, and callback/session processing passes with genuine Supabase sessions. The owner-reported existing-account Google PASS applies to Preview. No signed-in Google browser session is accessible here. Single manual test: sign into the staged candidate with that authorized Google test account, verify Your plans, refresh, sign out, and reauthenticate. No credentials need to be recreated or shared.
+
+Distinct staged acceptance across the completed runs: **21 PASS, 2 FAIL (credits), 2 SKIP (unconfigured-auth environment and real signup without an authorized inbox template)**. Initial harness failures/interruption and final corrections are recorded in [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md). Public Production remains the prior deployment `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`; candidate `dpl_7st1sGRtjza4EbR245Z7S3uty6qi` remains unpromoted. Promotion and new-public-release verification follow only after acceptance passes.
+
+## Earlier release preparation — superseded where noted
+
+The earlier access-approval and staged-redirect blockers below are resolved by the latest section above.
+
 ## Current release blockers — October 18, 2026
 
 Google OAuth is **MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT** on the latest Preview: the owner authenticated, reached Your plans, signed out, reauthenticated with the same account, and accessed New Objective. This does not establish other-account, cross-browser, or Google-specific refresh coverage. Latest Preview and Production origins and `/auth` redirect paths now pass. Working OAuth credentials need no changes.

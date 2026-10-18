@@ -1,5 +1,65 @@
 # Production release verification
 
+## Latest authorized staged browser results — October 18, 2026
+
+**STAGED BROWSER ACCEPTANCE PERFORMED — PRODUCTION PROMOTION REMAINS BLOCKED.** This section supersedes the access/redirect blockers and Preview-only scope in the earlier record below.
+
+### Confidential access and scope
+
+The owner explicitly approved temporary access only to `dpl_7st1sGRtjza4EbR245Z7S3uty6qi`. The Vercel connector account returned a service permission error; the mapped CLI fallback with the existing owner's credentials succeeded. Only `/aliases/{approved deployment id}/protection-bypass` was mutated, with explicit team scope. No project-wide protection setting or other deployment was changed.
+
+The broad run and targeted retry requested 600-second TTLs; the final non-inference callback run requested 120 seconds. The API accepted TTL requests but did not expose an expiry field in returned metadata. Each grant was explicitly revoked in cleanup. The final revocation was acknowledged and a fresh unauthenticated request with that revoked grant reached Vercel authentication instead of the app. All grants were held only in process memory and passed to tests in memory. No confidential URL/token was printed, saved in logs or repository files, or included in this report. Browser traces were disabled and the fixture enforces this requirement. Recorded task files were checked for persisted confidential-link patterns with no matches.
+
+The access fixture is restricted to the approved staged origin. It establishes the host-scoped access cookie, then leaves `/auth` so a subsequent token-bearing callback navigation creates a new document and SDK instance. The first fixture version preloaded `/auth`, which caused a direct `/auth#tokens` test arrival to become same-document navigation; that test-only artifact was corrected and the final session retest passed. Application authentication code did not change.
+
+### Exact staged test results
+
+| Run                                  |       Passed |      Failed | Skipped / incomplete                                                                                                    |
+| ------------------------------------ | -----------: | ----------: | ----------------------------------------------------------------------------------------------------------------------- |
+| Broad staged run                     | 13 completed | 2 scenarios | 2 gated skips; 7 checks unfinished/interrupted by the 530-second runner deadline                                        |
+| Targeted retry and unfinished checks |           17 |           3 | 2 gated skips; failures were Startup credits, Learning credits, and the fixture-induced direct-session callback failure |
+| Final corrected callback/session run |            7 |           0 | 0; genuine confirmation callback included after allowlist completion                                                    |
+| Distinct current cases across runs   |       **21** |       **2** | **2 skips**; no double-counting of repeated passes                                                                      |
+
+The two current failures are Startup and Learning live-AI scenarios. The skips are the intentionally unconfigured-auth environment and real signup without an authorized inbox template. The confirmation callback was initially excluded while its redirect was blocked, then passed in the final run. The earlier direct-session test failure is resolved by the fixture correction. The successful paid golden journey and Career scenario were not repeated.
+
+Verified on the actual staged Production candidate:
+
+- Authenticated dashboard and protected navigation; password login, genuine Supabase callback processing, persistence after refresh, logout, and reauthentication.
+- Real Google initiation reaches Google with an origin-specific `/auth` return. Query/fragment callback failures and incomplete sessions display safe errors and clear processed parameters.
+- Real OpenRouter intake, plan generation, graph persistence/activation, strategy switching, action start/completion, progress refresh, check-ins, rejected/accepted replans, and retained history in the golden journey. Career live planning also passed.
+- Desktop and mobile workspace edits, JSON export, quota handling, deletion, SDK refresh/expiry handling, demo persistence/mobile layout, navigation, and cross-user data denial.
+
+**Scope limits:** no signed-in Google test session is available in the connected browser surfaces, so actual Google account selection and provider return on this staged hostname are not claimed. The owner-reported Google PASS remains limited to the existing account on Preview. The genuine confirmation test does not establish SMTP receipt. Mobile workspace/demo pass, but the live Learning journey is currently blocked by credits.
+
+### Confirmed OpenRouter blocker and cost
+
+The initial golden journey used six successful schema-valid calls (9,647 input / 10,071 output tokens); Career used two successful calls (2,685 / 2,622). Startup intake initially succeeded (681 / 340) before plan generation failed; the initial Learning attempt failed. On targeted retry, Startup and Learning each returned **`AI_BUDGET_EXCEEDED`** during intake, with recorded latencies of 90ms and 100ms. The app maps provider HTTP 402 to this code.
+
+Read-only provider checks distinguish the key cap from account funds: the key remains accepted and reports approximately $49.90 remaining under its configured spending limit, while `/api/v1/credits` reports `total_credits=0` and `total_usage=0.10893625`. The earlier statement that quota was available referred only to the key cap; it did not establish available account credits. Restore usable credits in the existing OpenRouter account before rerunning the two blocked scenarios. No key, model, provider, timeout, retry policy, or application configuration was changed, and no purchase was made.
+
+Known recorded successful usage totals **13,013 input / 13,033 output tokens**, estimated **$0.026058** at the verified model rates. Four failed logical operations across the runs report no tokens; their full billing cannot be derived from app telemetry. The provider's reported cumulative account usage of $0.10893625 is still below the $2 verification budget. No further inference was attempted after the budget failure was confirmed. Confirmation/session retesting made no model calls.
+
+### Security, cleanup, and deployment
+
+- Typecheck and lint pass after the test-only changes; six existing Fast Refresh warnings remain. Current source/build secret scan reports zero findings. The earlier full automated suite remains 60 passed/one optional skip; application source has not changed.
+- The existing HTTP asset audit covers the same staged build: 20 responses, all 200, correct Supabase reference, zero secret findings. Workspace and demo checks assert browser errors/layout behavior; live Learning completion is not marked passed.
+- Staged deployment error query: zero records in the inspected one-hour window, limited to 100 records. The handled provider budget failures appear in application telemetry, so zero runtime-error records do not mean every AI operation succeeded.
+- One fixture left by the first runner deadline was explicitly removed. Final cleanup check: zero fixtures created by this attempt remain. Two older September 7 synthetic fixtures and all real users were preserved.
+- Deployment Protection remains `all_except_custom_domains`; no project-wide exception was enabled.
+- Staged candidate remains READY: `dpl_7st1sGRtjza4EbR245Z7S3uty6qi`, source `80a4be968fd059c9dd55f7575612c5b5f04e16af`.
+- Explicit final alias lookup confirms https://reversepath-vibesprint.vercel.app still serves `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`. The working Production/rollback deployment was preserved. No promotion occurred.
+
+### Remaining acceptance actions
+
+1. Restore usable credits in the existing OpenRouter account; rerun only Startup and Learning live scenarios.
+2. Supply the owner's actual email-receipt/confirmation result. Until then, **EMAIL_DELIVERY_ACCEPTANCE remains BLOCKED**. Do not send callback URLs, credentials, or message contents.
+3. Complete one Google account sign-in on the staged hostname in an authorized browser, verify Your plans and refresh, then logout/reauthenticate. Existing Preview Google acceptance is already recorded and does not need repetition there.
+
+The staged origin and `/auth` redirect now both pass their fresh generated-link probes; no repeat allowlist change is requested. Once the remaining acceptance gates pass, promote the verified candidate and test the actual public release. This authorization persists, but no manual inbox result or staged Google account return has been inferred. No confidential access URL appears in these instructions or this report.
+
+## Earlier release preparation — historical where superseded
+
 ## Latest release verification — October 18, 2026
 
 **PRODUCTION CANDIDATE READY — PUBLIC PROMOTION BLOCKED BY REMAINING ACCEPTANCE GATES.** This section supersedes the historical reports below.

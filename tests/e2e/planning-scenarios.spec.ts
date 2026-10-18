@@ -148,7 +148,7 @@ for (const scenario of scenarios) {
         } finally {
             const usage = await admin
                 .from("ai_usage_events")
-                .select("input_tokens, output_tokens, outcome, schema_valid")
+                .select("input_tokens, output_tokens, outcome, schema_valid, latency_ms")
                 .eq("user_id", userId);
             console.log(
                 "SCENARIO_AI_USAGE",
@@ -158,6 +158,8 @@ for (const scenario of scenarios) {
                     inputTokens: usage.data?.reduce((s, r) => s + (r.input_tokens ?? 0), 0),
                     outputTokens: usage.data?.reduce((s, r) => s + (r.output_tokens ?? 0), 0),
                     successful: usage.data?.every((r) => r.outcome === "SUCCESS" && r.schema_valid),
+                    outcomes: usage.data?.map((r) => r.outcome),
+                    latencyMs: usage.data?.map((r) => r.latency_ms),
                 }),
             );
             await admin.auth.admin.deleteUser(userId);
