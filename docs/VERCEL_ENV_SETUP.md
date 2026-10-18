@@ -1,6 +1,6 @@
 # Vercel environment setup
 
-The verified migration uses **Supabase + direct Gemini + Vercel**. The complete real Gemini Free Tier Golden Path has passed locally. Keep the existing project and public deployment. The owner’s manual variable update has been privately verified for both targets. The new Preview is deployed; Production is held on its new authentication redirect gate. See [current hosted verification](PRODUCTION_RELEASE_VERIFICATION.md).
+The verified migration uses **Supabase + direct Gemini + Vercel**. The complete real Gemini Free Tier Golden Path has passed locally. Keep the existing project and public deployment. The owner’s manual variable update has been privately verified for both targets. Preview authentication acceptance and public Production release verification have passed; Production is live. See [current hosted verification](PRODUCTION_RELEASE_VERIFICATION.md).
 
 ## Required configuration
 
@@ -39,10 +39,10 @@ Preserve Supabase settings; the eventual live target uses AI_PROVIDER_MODE=live.
 - OPENROUTER_MODEL_DEFAULT
 - OPENROUTER_ENABLED
 
-Role-specific OpenRouter variables are also unused. Preserve rollback access until release acceptance; existing deployments still contain the old implementation. No environment variables or protection settings were changed by the agent. A new Preview was deployed; public Production remains unchanged.
+Role-specific OpenRouter variables are also unused. Preserve rollback access until release acceptance; existing deployments still contain the old implementation. No environment variables or protection settings were changed by the agent. Preview and the exact staged Production build were deployed and verified, then Production was promoted to the existing domain. The prior deployment remains READY for rollback.
 
 ## Optional controls
 
 Keep only controls you use: AI_PROVIDER_TIMEOUT_MS (90000; maximum 300000), AI_PROVIDER_MAX_RETRIES (0; maximum 2), AI_MAX_OUTPUT_TOKENS (12000; range 256–16384), shared/operation-specific daily limits, and SUPABASE_STORAGE_BUCKET. Defaults remain 20 intake and 10 plan/replan requests per user per day, per operation. Only 503/429 are eligible for opt-in retries, with at most three total attempts, approximately 2/5-second backoff plus jitter, and Retry-After respected. A cooldown longer than 60 seconds ends the request. 400/401/403, configuration, schema and graph errors are not blindly retried. The successful controlled run used AI_PROVIDER_MAX_RETRIES=2; setting this existing optional control to 2 reproduces that bounded retry policy. No additional environment variable was introduced. VITE_AUTH_PROVIDER=supabase is optional; APP_ENV and PUBLIC_APP_URL are not required for routing or authentication.
 
-Test gates belong in controlled local testing. Run configuration checks, typecheck, lint, tests, the Vercel build, audit and secret scanner. The local real intake → plan → validate → save → strategy/action/progress/refresh → check-in → real replan → reject and accept revisions has passed. Hosted Gemini verification now passes; the new Preview redirect allowlist and Google account-return acceptance remain release gates. Mock passes do not replace real acceptance. Historical provider reports remain historical.
+Test gates belong in controlled local testing. Run configuration checks, typecheck, lint, tests, the Vercel build, audit and secret scanner. The local real intake → plan → validate → save → strategy/action/progress/refresh → check-in → real replan → reject and accept revisions has passed. Hosted Gemini, updated Preview callbacks, owner-confirmed Google account returns and public Production acceptance all pass. No remaining release gate requires configuration changes. Mock passes do not replace real acceptance. Historical provider reports remain historical.

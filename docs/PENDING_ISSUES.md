@@ -1,6 +1,43 @@
 # Pending issues
 
-## Hosted release verification — October 19, 2026
+## Production release verified — October 19, 2026
+
+**REVERSEPATH COMPLETE — PRODUCTION LIVE AND VERIFIED.**
+
+| Release identity              | Verified value                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| Public Production URL         | https://reversepath-vibesprint.vercel.app/                                   |
+| Production deployment         | dpl_3Yxv1DmiWCzbu6NX5YH6bndrGyAu — READY, production                         |
+| Released application source   | 8b46434cf02fb59b06417d3e5923e845f8af4707                                     |
+| Verified Preview              | dpl_G7h3S3Q6TLiYRhjVjmXKWNobQ5v8 — same application source                   |
+| Preview URL                   | https://reversepath-vibesprint-rcsecgaua-kaushik-yellanki-project.vercel.app |
+| AI model/provider             | gemini-3.8-flash — direct Google Gemini, no model/provider fallback          |
+| Billing tier                  | Owner-confirmed Free Tier; paid billing disabled; $0 input/output            |
+| Preserved rollback deployment | dpl_DbZKsUNeizVEiAe7X8dM7tHEAe79 — still READY                               |
+| Rollback source               | 80a4be968fd059c9dd55f7575612c5b5f04e16af                                     |
+
+### Acceptance evidence
+
+- **Preview auth/smoke retest: 11 passed, zero failed.** The owner added the exact current Preview redirect entries; the previously failing real Supabase confirmation callback now restores a session on Preview. Password reauthentication, callback error handling, Google provider initiation, session restoration, protected routing and desktop/mobile demo passed. No additional Preview AI calls were needed; its previously verified real Gemini Golden Path was preserved.
+- **Google account login: owner-confirmed MANUAL PASS on both Preview and public Production**, including the same-origin authenticated dashboard, refresh, logout and re-login. Automated provider initiation and real Supabase session callback tests passed separately; they were not misrepresented as Google account-selection evidence.
+- **Public Production browser suite: 15 passed, zero failed**, using the actual public domain without Vercel protection-bypass headers. The real Gemini Golden Path passed intake, compact plan generation, original Zod/graph validation, transactional Supabase persistence/activation, strategy selection, action start/completion, progress refresh, check-in, two real replans, revision rejection and acceptance, reauthentication and cross-user denial. Desktop/mobile workspace, demo and the real confirmation callback also passed.
+- Initial Production graph: **14 nodes, 13 edges, two strategies, three recommended milestones and seven executable actions/experiments**. Refresh verified three retained versions, exactly one rejected candidate, exactly one active version (v3), and the matching database active-version pointer.
+- Six successful logical Production AI operations used **7,496 input tokens and 13,583 output tokens**, all finishing STOP with valid schemas. Runtime graph validation passed for the initial plan and both replans. Output tokens: intake 547; plan 4,173; replans 4,084 each; explanations 354 and 341. An intermediate replan diagnostic had no output before success; its upstream status was not logged, so no specific HTTP code is inferred. No mock output replaced a live generation.
+- **Security/runtime PASS:** all 21 fetched public HTML/browser assets returned HTTP 200, with zero private-key/private-environment-identifier findings. Final deployment-filtered logs contain zero error records, zero HTTP 5xx and zero private-key matches. Gemini and Supabase service secrets remain server-only; .env is ignored/untracked. OpenRouter is absent from application runtime dependencies/configuration. Dependency audit remains zero vulnerabilities.
+- The accepted unchanged-source automated baseline is **81 passed, one optional live smoke skipped**; its typecheck, lint (six existing warnings), Vercel build, audit and secret scans passed. The new Production build also completed successfully on Vercel before promotion. No architecture, provider, authentication-policy, database-schema, branch or PR changes were introduced during release.
+- Disposable-account cleanup passed: no current-run test accounts remain. Two unrelated older September fixtures were preserved. Owner-confirmed real confirmation-email inbox delivery remains accepted prior evidence; no extra email delivery claim or inbox receipt was fabricated.
+
+### Release and rollback
+
+The exact verified source was staged with Production settings and **--skip-domain**, checked while the previous public deployment stayed in place, then promoted only after Preview automated acceptance and the owner's full Google return/refresh/re-login confirmation passed. The public alias now resolves to **dpl_3Yxv1DmiWCzbu6NX5YH6bndrGyAu** and its intended Gemini source. The old deployment remains READY for rollback; it was not deleted or overwritten.
+
+The owner-updated Preview and Production values were privately verified: existing GEMINI_API_KEY, GEMINI_MODEL_DEFAULT=gemini-3.8-flash, AI_PROVIDER_MODE=live, AI_PROVIDER_MAX_RETRIES=2, and unchanged matching Supabase values. OpenRouter variables are removed. No Vercel project/protection settings were changed and no temporary share link or broad protection exception was created.
+
+**Remaining release blockers/manual actions: none.** Known operational limitation: Free Tier may transiently return 503/429 or exhaust quota. Existing retries stay bounded to at most three attempts, respect Retry-After, and never use paid/model/provider/mock fallbacks in live mode. Saved plans remain usable during inference outages.
+
+This section supersedes the earlier blocked-release records below. Release documentation is committed directly to main with a normal push; the deployed application source remains the verified code commit above.
+
+## Historical Preview authentication gate (resolved October 19, 2026)
 
 **PRODUCTION RELEASE BLOCKED — hosted Gemini workflow verified; new Preview authentication redirect gate remains open.**
 
@@ -29,7 +66,7 @@ Known Free Tier limitation: transient provider unavailability/rate limits may oc
 
 The sections below record earlier verification dates and must not override this latest hosted status.
 
-## Current Gemini hosting gate — October 18, 2026
+## Historical Gemini hosting gate — October 18, 2026
 
 The complete real Gemini Free Tier Golden Path passed locally with `gemini-3.8-flash`. The owner confirmed Free Tier with paid billing disabled. The current availability check succeeded on attempt two (503, then 200 after 2.1-second backoff); 3.6 was not used. Real intake, compact plan, Zod/graph validation, Supabase persistence/activation, strategy selection, action/progress refresh, check-in, two replans, rejection and acceptance all passed. Database refresh confirmed three versions, one rejected revision, exactly one active version (v3), and a matching active-version pointer.
 
