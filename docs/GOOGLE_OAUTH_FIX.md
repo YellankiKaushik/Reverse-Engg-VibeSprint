@@ -1,6 +1,8 @@
 # Google OAuth callback investigation — October 18, 2026
 
-**Callback/session handling fix deployed to Preview. Full Google login remains BLOCKED.**
+**Latest owner evidence: MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT.** The owner completed Google account selection, reached Your plans, signed out, reauthenticated with the same account, and accessed New Objective on the latest Preview. Fresh redirect probes now retain that Preview's origin and `/auth`. Other accounts, cross-browser behavior, and Google-specific refresh persistence are not inferred from this result. See [the latest release verification](PRODUCTION_RELEASE_VERIFICATION.md) for the staged Production candidate and remaining gates.
+
+The investigation below records the earlier state before that manual acceptance and redirect update; its Google/Preview blockers are historical.
 
 ## Verified diagnosis
 

@@ -8,6 +8,7 @@ import {
     hasSupabaseLiveTestCredentials,
 } from "../helpers/test-env";
 loadProjectEnv();
+test.use({ trace: "off", screenshot: "off", video: "off" });
 test("real confirmation link restores a session and supports password reauthentication", async ({
     page,
     baseURL,
@@ -35,7 +36,22 @@ test("real confirmation link restores a session and supports password reauthenti
     try {
         await page.goto("/auth?x-vercel-set-bypass-cookie=true");
         // This verifies the genuine email-confirmation URL without SMTP delivery.
-        await page.goto(link.data.properties!.action_link).catch(() => {
+        let callback = link.data.properties!.action_link;
+        if (process.env["VERCEL_OIDC_TOKEN"]) {
+            // Playwright only routes the first URL in a redirect chain. Follow
+            // Supabase's real verification redirect explicitly, so the existing
+            // origin-scoped Preview credential is applied only to the app.
+            // This does not verify a user's native Vercel-cookie round trip.
+            const response = await page.request.get(callback, { maxRedirects: 0 }).catch(() => {
+                throw new Error("Confirmation verification failed (URL withheld)");
+            });
+            expect([302, 303].includes(response.status())).toBe(true);
+            callback = response.headers()["location"] ?? "";
+            if (!callback || new URL(callback).origin !== new URL(baseURL!).origin) {
+                throw new Error("Confirmation redirect did not retain the intended app origin");
+            }
+        }
+        await page.goto(callback).catch(() => {
             throw new Error("Confirmation callback navigation failed (URL withheld)");
         });
         await expect(page.getByRole("heading", { name: /your plans/i })).toBeVisible({

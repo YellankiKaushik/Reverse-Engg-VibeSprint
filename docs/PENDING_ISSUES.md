@@ -1,6 +1,19 @@
 # Pending issues
 
-## Current release blockers — October 17, 2026
+## Current release blockers — October 18, 2026
+
+Google OAuth is **MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT** on the latest Preview: the owner authenticated, reached Your plans, signed out, reauthenticated with the same account, and accessed New Objective. This does not establish other-account, cross-browser, or Google-specific refresh coverage. Latest Preview and Production origins and `/auth` redirect paths now pass. Working OAuth credentials need no changes.
+
+- **EMAIL_DELIVERY_ACCEPTANCE: BLOCKED.** Once, use Create account on https://reversepath-vibesprint-1dl3py5y4-kaushik-yellanki-project.vercel.app with a new address whose inbox you control; verify actual receipt, open its confirmation link, and report that it returns to the Preview and permits login. No authorized inbox/template was available here. Do not repeatedly resend. Generated confirmation links and intercepted signup responses do not prove delivery.
+- **Staged Production browser acceptance: BLOCKED.** Candidate `dpl_7st1sGRtjza4EbR245Z7S3uty6qi` is READY, source `80a4be968fd059c9dd55f7575612c5b5f04e16af`. Authenticated Vercel CLI HTTP checks return 200, but browser OIDC preflight returns HTTP 403 `TRUSTED_SOURCES_ENVIRONMENT_MISMATCH`. No protection setting was changed. Automatic approval review rejected a temporary share link because access for up to 23 hours was not explicitly authorized. A deployment-specific temporary access link needs the owner's approval before staged browser testing can finish; do not disable protection or extract credentials to work around this decision.
+- **Staged OAuth callback origin: BLOCKED for that temporary hostname.** In the existing project's [Auth URL Configuration](https://supabase.com/dashboard/project/usvopldwiwzlvoqawvcu/auth/url-configuration), allow `https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app` and `https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app/**` for Google/confirmation testing on the staged hostname, preserving working Production, Preview, and localhost entries. Its `/auth` request currently falls back to Production. The final public Production `/auth` destination already passes. No working OAuth credentials need recreation.
+- **Public promotion and new-release public acceptance: WITHHELD.** The existing public domain still serves source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`, rollback deployment `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`. Finish the gates above before promoting the tested staged candidate and verifying the public release. Public Google acceptance has not been inferred from the manual Preview result.
+
+Independent work is complete: 60 automated passes/one optional skip; 20 local browser passes/five gated skips; corrected hosted non-AI suite 19 passes/five gated skips, plus the real AI golden journey and separate mobile Learning journey passed. Production variables/build, dependency/security scans, and bounded runtime-error checks pass. This attempt changed only the confirmation test harness and documentation. Full limits and the initial harness failure are recorded in [PRODUCTION_RELEASE_VERIFICATION.md](PRODUCTION_RELEASE_VERIFICATION.md).
+
+## Historical release blockers — October 17, 2026
+
+The following section is historical and is superseded by the October 18 results above, including its Google configuration and Preview redirect statements.
 
 - **Production confirmation redirect: RESOLVED.** Fresh generated signup links retain `https://reversepath-vibesprint.vercel.app`. The old localhost fallback is no longer the current failure.
 - **Preview confirmation redirects: BLOCKED.** Both the required old Preview (`reversepath-vibesprint-4nqt9wyek-kaushik-yellanki-project.vercel.app`) and the new verified candidate (`reversepath-vibesprint-m8pa5r4bg-kaushik-yellanki-project.vercel.app`) fall back to Production. Allow their exact origins in the existing Supabase project's Auth redirect allowlist.

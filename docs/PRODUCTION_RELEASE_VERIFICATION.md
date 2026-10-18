@@ -1,5 +1,112 @@
 # Production release verification
 
+## Latest release verification — October 18, 2026
+
+**PRODUCTION CANDIDATE READY — PUBLIC PROMOTION BLOCKED BY REMAINING ACCEPTANCE GATES.** This section supersedes the historical reports below.
+
+### Application acceptance
+
+| Area                       | Status and verified scope                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend                   | **PASS on latest Preview** — routes, dashboard, navigation, desktop/mobile workspace, demo, account settings, export, and error handling.                                                                                                                                                                                                                                                                           |
+| Backend                    | **PASS** — live Supabase persistence, authenticated server functions, ownership/RLS tests, transaction and concurrency tests.                                                                                                                                                                                                                                                                                       |
+| Google OAuth               | **MANUAL GOOGLE LOGIN PASS — EXISTING TEST ACCOUNT**, reported directly by the owner on the latest Preview: account selection → Your plans → sign out → same-account reauthentication → New Objective. Other accounts, cross-browser behavior, Google-specific refresh, staged Google login, and public Production Google login are not inferred from this evidence. Real automated initiation also reaches Google. |
+| Email signup               | **EMAIL_DELIVERY_ACCEPTANCE BLOCKED** — signup UI/error handling and genuine generated confirmation-link verification pass, but no authorized inbox or mailbox template is available. No SMTP delivery or actual inbox receipt was verified. The opt-in real signup test remains skipped.                                                                                                                           |
+| Session/JWT                | **PASS on Preview** — genuine Supabase URL-session processing, user validation, dashboard navigation, password authentication, refresh persistence, SDK refresh, invalid/expired refresh handling, logout, and reauthentication. Callback errors are safely displayed and processed parameters are removed.                                                                                                         |
+| OpenRouter AI              | **PASS on Preview** — real `openai/gpt-4.1-mini`, eight successful/schema-valid calls with no mock fallback.                                                                                                                                                                                                                                                                                                        |
+| Plan persistence/execution | **PASS on Preview** — objective analysis, structured graph generation, save/activation, strategy switching, action start/completion, progress update, and refresh persistence.                                                                                                                                                                                                                                      |
+| Replanning                 | **PASS on Preview** — check-ins, changed context, real proposed revisions, reject and accept flows, retained version history.                                                                                                                                                                                                                                                                                       |
+| Mobile                     | **PASS on Preview** — 390px workspace/demo and complete live Learning journey, persisted graph/action completion, no horizontal overflow or page errors in that scenario.                                                                                                                                                                                                                                           |
+| Protected account data     | **PASS** — two-user database tests and hosted cross-user plan denial; no private owner content displayed.                                                                                                                                                                                                                                                                                                           |
+
+### Test results and limits
+
+| Run/check                                          |       Passed | Failed | Skipped / limit                                                                                                                       |
+| -------------------------------------------------- | -----------: | -----: | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test` with `RUN_SUPABASE_RLS_TESTS=true`      |           60 |      0 | 1 optional paid live-AI smoke test; 17 test files passed, one skipped                                                                 |
+| Full local `npm run test:e2e`                      |           20 |      0 | 5: unconfigured-auth environment, three optional real-AI scenarios, real signup without authorized mailbox; planning was mock locally |
+| Initial full hosted Preview suite                  |           19 |      1 | 5 gated skips; failure was the confirmation harness reaching Vercel login before the app                                              |
+| Targeted corrected confirmation test               |            1 |      0 | 0; genuine Supabase verification plus explicitly followed callback, no email delivery claim                                           |
+| Corrected hosted non-AI suite                      |           19 |      0 | 5 gated skips; already-passed paid golden journey excluded, not counted as a new pass or skip                                         |
+| Hosted real-AI golden journey                      |            1 |      0 | 0; included in the initial hosted run, not repeated after the test-only correction                                                    |
+| Separate hosted mobile Learning journey            |            1 |      0 | 0; enabled only this optional scenario                                                                                                |
+| Public retained Production baseline browser checks |            5 |      0 | 0; landing, guard, generated confirmation/password reauth, demo persistence, mobile demo; older release only                          |
+| Staged Production browser suite                    |            — |      — | **BLOCKED before running**, OIDC access returns HTTP 403 `TRUSTED_SOURCES_ENVIRONMENT_MISMATCH`                                       |
+| Staged authenticated HTTP asset checks             | 20 responses |      0 | All HTTP 200; HTML and referenced JavaScript, not browser acceptance                                                                  |
+
+The corrected hosted suite plus the successful live golden journey cover the full currently enabled browser scope across runs. The separate mobile Learning test adds live mobile coverage. The optional unconfigured-auth case requires a deliberately empty configuration; the latest authenticated target is configured. Career and Startup scenarios were not enabled. The Learning scenario was skipped in the broad suite and passed separately. Skips are not passes.
+
+The confirmation failure was a test-harness limitation: Playwright routes only the first URL of a redirect chain, so the Preview-only OIDC header was absent after the cross-origin Supabase verification redirect. The corrected test follows the real Supabase verification endpoint without forwarding Vercel credentials, checks that its destination retains the intended app origin, and then opens that returned URL through the existing app-origin-only fixture. No response is mocked and the real disposable account is confirmed. Credential-bearing artifacts are disabled. This verifies Supabase confirmation and app session restoration, **not** a native browser's Vercel-cookie redirect round trip or inbox receipt. See the installed Playwright API types / [page.route documentation](https://playwright.dev/docs/api/class-page#page-route).
+
+Additional required commands all pass: `npm run check:env`, `npm run check:ai`, `npm run typecheck`, `npm run lint` (zero errors, six existing Fast Refresh warnings), `npm run build:vercel`, `npm audit` (zero vulnerabilities), and `node scripts/scan-secrets.mjs` (zero findings). Local `check:env` correctly reports mock mode; the separate isolated check of actual Production variables reports live mode. Builds retain existing TanStack validator deprecation warnings. Local development-server request-aborted diagnostics occurred when test navigation cancelled requests; hosted error scans below found no records.
+
+### Live inference budget
+
+The golden journey used six schema-valid calls: 9,006 input and 8,533 output tokens. Mobile Learning used two schema-valid calls: 2,667 input and 3,028 output tokens. Total newly incurred verification: **8 calls, 11,673 input tokens, 11,561 output tokens**.
+
+The live OpenRouter catalog reported $0.0000004/input token and $0.0000016/output token for `openai/gpt-4.1-mini`. Estimated total: **$0.0231668**, below $2. This estimate excludes billing adjustments and is not an invoice. No additional paid smoke test or repeated golden journey was run.
+
+### Production configuration and deployment identity
+
+The existing Vercel project remains `prj_McY3U5riuZN49HM72w9Bv7Ng0J1M`, team `team_UYEpjjRaObtrYF55SYu5rqUl`, Node.js 24. The eight required variables are scoped to shared Preview and Production without a branch override:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+OPENROUTER_API_KEY
+OPENROUTER_MODEL_DEFAULT
+AI_PROVIDER_MODE
+```
+
+Actual Production values were injected into a child process from a clean linked directory, avoiding local `.env` precedence. Private validation confirmed matching browser/server Supabase URLs and publishable keys; intended NEW project `usvopldwiwzlvoqawvcu`; private credentials matching the verified local configuration; no secret key in public-key variables; `AI_PROVIDER_MODE=live`; model `openai/gpt-4.1-mini`. Values and secret-bearing env files were not printed or written. The Production-configured local build, OpenRouter key/catalog check without inference, and remote Production build all passed.
+
+| Deployment role                        | Identity                                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Latest manually verified Preview       | https://reversepath-vibesprint-1dl3py5y4-kaushik-yellanki-project.vercel.app — `dpl_GAj6YD5ppfSjwUy2Zg6eXgPyocx8`, source `bcd234503cc82de465615f45c5acad78cc97d05c`                  |
+| Staged Production candidate            | https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app — **READY**, `dpl_7st1sGRtjza4EbR245Z7S3uty6qi`, source `80a4be968fd059c9dd55f7575612c5b5f04e16af`, main |
+| Current public Production              | https://reversepath-vibesprint.vercel.app — **READY, retained older release**, source `5ee686dc58aa1d4fc6bbfc959a6bc89280929736`                                                      |
+| Public deployment / preserved rollback | `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6` — https://reversepath-vibesprint-6jn9r9fiu-kaushik-yellanki-project.vercel.app                                                                     |
+
+The candidate was created under the new explicit staging authorization with `vercel deploy --prod --skip-domain`. [Vercel documents that this prevents automatic Production-domain promotion](https://vercel.com/docs/cli/deploy#skip-domain). After staging, an explicit lookup of `reversepath-vibesprint.vercel.app` still returns `dpl_4EmetpCmuMdwZkxBDKrccNyVMds6`; its prior source is preserved. No promotion or rollback was executed. The earlier automatic-review rejection of staging is historical; this newly authorized staged build succeeded.
+
+Preview and staged candidate contain identical application source, dependency lockfile, and build/deployment configuration. The difference at candidate source `80a4be9` is documentation. Subsequent finalization changes affect only the confirmation test harness and documentation, so a new runtime build was not required for those edits. No application architecture, keys, provider, database, or authentication policies changed. No new branches or PRs were created. Final main synchronization and clean-tree verification are performed after committing this report; the resulting commit is reported in the release response.
+
+### Redirects, protection, and security
+
+Fresh generated-link probes retain the exact latest Preview origin and `/auth`, the Production origin and `/auth`, and `http://127.0.0.1:4173`. The retired `4nqt9wyek` Preview still falls back to Production; it is not the current release candidate and is not a blocker for the working Preview. The temporary staged hostname's `/auth` currently falls back to Production and is not accepted for staged callback testing.
+
+Deployment Protection is preserved. Staged browser preflight with the existing development OIDC identity returns 403 `TRUSTED_SOURCES_ENVIRONMENT_MISMATCH`. Standard authorized `vercel curl` HTTP access works and was used only for HTML/JavaScript checks. Automatic approval review rejected the separate tool that would create a deployment share link: it grants authentication-bypassing access for up to 23 hours without explicit approval. No such link was created, and no credential was extracted or forwarded into a staged browser as a workaround. Staged browser acceptance remains blocked.
+
+Security results:
+
+- Source/generated-client/history secret scans: zero findings; 26 historical commits inspected before final report commit.
+- Preview browser audit: 20 assets, correct Supabase project, zero secret findings/page errors/failed requests/server errors on the inspected public pages.
+- Staged authenticated HTTP audit: 20 HTML/JavaScript responses, all 200, correct Supabase project, zero secret findings/request failures. No staged browser/session success is inferred.
+- Deployment-scoped runtime queries: zero error records for each of Preview, staged candidate, and retained public baseline in the inspected 30-minute window, bounded to 100 records each. This is not exhaustive monitoring or long-term retention evidence.
+- All newly generated test accounts from this final attempt were removed. Two older synthetic fixtures dated September 7 were observed and left untouched; real accounts were not modified.
+
+### Consolidated remaining actions
+
+1. **Real email acceptance:** once, create a new account on the latest working Preview using an inbox you control. Confirm actual receipt and open its link; verify it returns to the same Preview and permits login. Report the result, without sending email contents, credentials, or callback URLs. No repeated confirmation requests or SMTP changes are needed.
+2. **Staged browser access:** approve a deployment-specific temporary share link for `dpl_7st1sGRtjza4EbR245Z7S3uty6qi` so authenticated browser acceptance can run. The tool's new links last up to 23 hours. Keep Deployment Protection enabled. This approval was not inferred from permission to create the staged build.
+3. **Staged callback allowlist:** for OAuth/confirmation testing on the temporary staged hostname, add these two entries in the existing [Supabase Auth URL Configuration](https://supabase.com/dashboard/project/usvopldwiwzlvoqawvcu/auth/url-configuration), preserving the working Production, Preview, and localhost entries:
+
+    ```text
+    https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app
+    https://reversepath-vibesprint-h3nzus71j-kaushik-yellanki-project.vercel.app/**
+    ```
+
+    The connected Supabase account exposes only an unrelated inactive project and no management token is configured. No working Google credentials need to be recreated. The final public Production redirect already passes.
+
+After these acceptance gates pass, test the staged browser journey, promote that tested Production candidate to the existing public domain, and verify the new public release and Google login there. Those steps have **not** been claimed as complete. The owner-reported Google result applies only to the latest Preview and existing test account. **REVERSEPATH remains release-blocked; the new code is not yet serving public Production.**
+
+## Historical release records
+
+The sections below describe older attempts and are superseded by the current evidence above.
+
 > **GitHub status update:** Subsequent explicit GitHub-only authorization permitted [PR #1](https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint/pull/1) to be normally merged into main and the preserved stabilization branch to be removed. [GITHUB_FINALIZATION_REPORT.md](GITHUB_FINALIZATION_REPORT.md) supersedes this report's earlier GitHub-access/merge blockers. No automatic deployment path was configured and Production remains unchanged. Signup and Production acceptance gates below still apply.
 
 ## Current verification — October 17, 2026
